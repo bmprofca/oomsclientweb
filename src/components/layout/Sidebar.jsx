@@ -11,15 +11,13 @@ import {
   IndianRupee,
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 
 const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) => {
   const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname;
-  const { user } = useAuth();
   
-  const userType = user?.user_type || 'admin';
+  const userType = 'admin';
 
   const allMenuItems = [
     {
@@ -28,46 +26,11 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       path: '/',
     },
     {
-      icon: Users,
-      label: 'Clients',
-      path: '/clients',
-      roles: ['admin'],
-    },
-    {
-      icon: Briefcase,
-      label: 'Staffs',
-      path: '/staffs',
-      roles: ['admin'],
-    },
-    {
-      icon: ClipboardList,
-      label: 'My Orders',
-      path: '/my-orders',
-      roles: ['staff'],
-    },
-    {
-      icon: FileBox,
-      label: 'Orders',
-      path: '/orders',
-      roles: ['admin'],
-    },
-    {
-      icon: ConciergeBell,
-      label: 'Services',
-      path: '/services',
-      roles: ['admin'],
-    },
-    {
       icon: BrickWall,
       label:'Firms',
       path:'/firms',
       roles:['admin'],
-    },{
-      icon:IndianRupee,
-      label:'Payments',
-      path:'/payments',
-      roles:['admin'],
-    }
+    },
   ];
 
   const menuItems = allMenuItems.filter(item => !item.roles || item.roles.includes(userType));

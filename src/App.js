@@ -1,11 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
-import { ServiceOptionsProvider } from "./contexts/ConstantOptionsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
-import ProtectedRoute from "./components/ProtectedRoute";
-import PublicRoute from "./components/PublicRoute";
 import MainLayout from "./components/layout/MainLayout";
 import NotFound from "./pages/NotFound";
 import ServerUnreachable from "./pages/ServerUnreachable";
@@ -16,42 +12,28 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <AuthProvider>
-          <ServiceOptionsProvider>
-            <ToastProvider>
-              <Routes>
-                {/* Redirect Root to Login */}
-                <Route path="/" element={<Navigate to="/login" replace />} />
+        <ToastProvider>
+          <Routes>
+            {/* Redirect Root to Login */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                {/* Public Routes */}
-                <Route
-                  path="/login"
-                  element={
-                    <PublicRoute>
-                      <Login />
-                    </PublicRoute>
-                  }
-                />
+            <Route path="/login" element={<Login />} />
 
-                {/* Server Unreachable - Public Route */}
-                <Route path="/server-error" element={<ServerUnreachable />} />
+            {/* Server Unreachable Route */}
+            <Route path="/server-error" element={<ServerUnreachable />} />
 
-                {/* Protected Routes with MainLayout */}
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<MainLayout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                  </Route>
-                </Route>
+            {/* Routes with MainLayout */}
+            <Route element={<MainLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
 
-                {/* 404 Not Found Route */}
-                <Route path="/404" element={<NotFound />} />
+            {/* 404 Not Found Route */}
+            <Route path="/404" element={<NotFound />} />
 
-                {/* Catch all route - redirect to 404 */}
-                <Route path="*" element={<Navigate to="/404" replace />} />
-              </Routes>
-            </ToastProvider>
-          </ServiceOptionsProvider>
-        </AuthProvider>
+            {/* Catch all route - redirect to 404 */}
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
+        </ToastProvider>
       </BrowserRouter>
     </ThemeProvider>
   );

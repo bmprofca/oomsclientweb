@@ -1,216 +1,452 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Fingerprint, Lock, ArrowRight, Loader2, KeyRound } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
-const Login = () => {
-  const [step, setStep] = useState(1); // 1: PAN, 2: OTP
+const GRID_SIZE = 40;
+
+function GridBackground() {
+  return (
+    <svg
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id="grid" width={GRID_SIZE} height={GRID_SIZE} patternUnits="userSpaceOnUse">
+          <path
+            d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+            fill="none"
+            stroke="#e2e8f0"
+            strokeWidth="0.8"
+          />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+  );
+}
+
+function StepDots({ step }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
+      {[1, 2].map((s) => (
+        <React.Fragment key={s}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 12,
+              fontWeight: 600,
+              transition: 'all 0.4s ease',
+              background: step >= s ? '#0f172a' : '#f1f5f9',
+              color: step >= s ? '#ffffff' : '#94a3b8',
+              border: step >= s ? '2px solid #0f172a' : '2px solid #e2e8f0',
+            }}
+          >
+            {step > s ? '✓' : s}
+          </div>
+          {s < 2 && (
+            <div style={{ flex: 1, height: 2, borderRadius: 1, background: '#e2e8f0', position: 'relative', overflow: 'hidden' }}>
+              <div
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: '#0f172a',
+                  transform: step > 1 ? 'scaleX(1)' : 'scaleX(0)',
+                  transformOrigin: 'left',
+                  transition: 'transform 0.5s ease',
+                }}
+              />
+            </div>
+          )}
+        </React.Fragment>
+      ))}
+      <span style={{ marginLeft: 8, fontSize: 12, color: '#94a3b8', letterSpacing: '0.05em' }}>
+        {step === 1 ? 'Identify' : 'Verify'}
+      </span>
+    </div>
+  );
+}
+
+function Input({ id, label, value, onChange, placeholder, type = 'text', disabled, hint, maxLength, autoComplete }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <label
+        htmlFor={id}
+        style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+      >
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        maxLength={maxLength}
+        autoComplete={autoComplete}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          display: 'block',
+          width: '100%',
+          padding: '12px 14px',
+          fontSize: 15,
+          fontFamily: 'inherit',
+          background: '#f8fafc',
+          border: `1.5px solid ${focused ? '#0f172a' : '#e2e8f0'}`,
+          borderRadius: 8,
+          color: '#0f172a',
+          outline: 'none',
+          transition: 'border-color 0.2s',
+          boxSizing: 'border-box',
+          letterSpacing: type === 'text' && id === 'pan' ? '0.1em' : id === 'otp' ? '0.3em' : 'normal',
+        }}
+      />
+      {hint && (
+        <p style={{ marginTop: 5, fontSize: 11, color: '#94a3b8' }}>{hint}</p>
+      )}
+    </div>
+  );
+}
+
+function SubmitButton({ label, loading, disabled }) {
+  return (
+    <button
+      type="submit"
+      disabled={disabled || loading}
+      style={{
+        width: '100%',
+        padding: '13px 0',
+        background: disabled || loading ? '#cbd5e1' : '#0f172a',
+        color: '#ffffff',
+        border: 'none',
+        borderRadius: 8,
+        fontSize: 14,
+        fontWeight: 600,
+        fontFamily: 'inherit',
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        transition: 'background 0.2s, transform 0.1s',
+        letterSpacing: '0.04em',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+      }}
+      onMouseDown={e => { if (!disabled && !loading) e.currentTarget.style.transform = 'scale(0.98)'; }}
+      onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+    >
+      {loading ? <Spinner /> : label}
+    </button>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" style={{ animation: 'spin 0.8s linear infinite' }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <circle cx="9" cy="9" r="7" fill="none" stroke="white" strokeWidth="2" strokeDasharray="30 14" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ErrorBanner({ message }) {
+  if (!message) return null;
+  return (
+    <div
+      style={{
+        background: '#fef2f2',
+        border: '1px solid #fecaca',
+        color: '#b91c1c',
+        borderRadius: 8,
+        padding: '10px 14px',
+        fontSize: 13,
+        marginBottom: 20,
+        animation: 'fadeIn 0.25s ease',
+      }}
+    >
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      ⚠ {message}
+    </div>
+  );
+}
+
+// Left panel info data
+const FEATURES = [
+  { icon: '⬡', title: 'PAN-based identity', desc: 'Your permanent account number acts as your unique key — no username to remember.' },
+  { icon: '◈', title: 'OTP verification', desc: 'A one-time code is sent to your registered mobile for every login.' },
+  { icon: '◉', title: 'Zero stored passwords', desc: 'We never store credentials — each session is independently verified.' },
+];
+
+export default function Login() {
+  const [step, setStep] = useState(1);
   const [panNumber, setPanNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { sendOtp, login } = useAuth();
-  const navigate = useNavigate();
+  const [panSent, setPanSent] = useState('');
+
+  // Animate feature cards sequentially on mount
+  const [visibleFeature, setVisibleFeature] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setVisibleFeature(v => (v < FEATURES.length ? v + 1 : v)), 300);
+    return () => clearInterval(t);
+  }, []);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
-    
-    // Basic PAN validation (10 alphanumeric characters)
     const panRegex = /^[A-Z0-9]{10}$/i;
     if (!panRegex.test(panNumber)) {
-      setError('Please enter a valid 10-character PAN number.');
+      setError('Enter a valid 10-character PAN number (e.g. ABCDE1234F).');
       return;
     }
-
     setIsSubmitting(true);
-    try {
-      await sendOtp({ panNumber: panNumber.toUpperCase() });
-      setStep(2);
-    } catch (err) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await new Promise(r => setTimeout(r, 1200));
+    setPanSent(panNumber);
+    setStep(2);
+    setIsSubmitting(false);
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
-    
     if (otp.length < 4) {
-      setError('Please enter a valid OTP.');
+      setError('Enter the 6-digit OTP sent to your registered mobile.');
       return;
     }
-
     setIsSubmitting(true);
-    try {
-      await login({ panNumber: panNumber.toUpperCase(), otp });
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Invalid OTP. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await new Promise(r => setTimeout(r, 1200));
+    setIsSubmitting(false);
+    alert('Login successful! Redirecting to dashboard...');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[30%] -left-[10%] w-[70%] h-[70%] rounded-full bg-indigo-600/10 blur-[120px]" />
-        <div className="absolute -bottom-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-pink-600/10 blur-[120px]" />
-      </div>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+        background: '#f8fafc',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <style>{`
+        @media (max-width: 900px) {
+          .left-panel { display: none !important; }
+          .right-panel { padding: 20px !important; }
+          .login-card { padding: 24px 20px !important; }
+        }
+      `}</style>
+      <GridBackground />
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md p-8 relative z-10"
+      {/* ── LEFT PANEL ── */}
+      <div
+        className="left-panel"
+        style={{
+          width: '42%',
+          minHeight: '100vh',
+          background: '#0f172a',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '52px 48px',
+          position: 'relative',
+          overflow: 'hidden',
+          zIndex: 1,
+          flexShrink: 0,
+        }}
       >
-        <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-800 rounded-3xl shadow-2xl p-8 relative overflow-hidden">
-          
-          {/* Header */}
-          <div className="text-center mb-8">
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/30"
+        {/* left grid overlay */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.07 }}>
+          <defs>
+            <pattern id="dgrid" width={GRID_SIZE} height={GRID_SIZE} patternUnits="userSpaceOnUse">
+              <path d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`} fill="none" stroke="#ffffff" strokeWidth="0.8" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dgrid)" />
+        </svg>
+
+        {/* top: logo */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 64 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                background: '#6366f1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+              }}
             >
-              <Fingerprint className="text-white w-8 h-8" />
-            </motion.div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">OOMS Access</h1>
-            <p className="text-gray-400 text-sm mt-2">Secure verification required</p>
+              ⬡
+            </div>
+            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: 16, letterSpacing: '0.04em' }}>OOMS</span>
           </div>
 
-          {/* Error Message */}
-          <AnimatePresence mode="wait">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, mb: 0 }}
-                animate={{ opacity: 1, height: 'auto', mb: 16 }}
-                exit={{ opacity: 0, height: 0, mb: 0 }}
-                className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-xl text-center"
-              >
-                {error}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <h1 style={{ color: '#ffffff', fontSize: 30, fontWeight: 700, lineHeight: 1.25, margin: '0 0 12px' }}>
+            Secure access,<br />simplified.
+          </h1>
+          <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, margin: '0 0 48px' }}>
+            Organisation Operations Management System uses your PAN as your identity — no passwords, no friction.
+          </p>
 
-          {/* Form Content */}
-          <AnimatePresence mode="wait">
-            {step === 1 ? (
-              <motion.form
-                key="step1"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                onSubmit={handleSendOtp}
-                className="space-y-6"
+          {/* feature cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {FEATURES.map((f, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  gap: 14,
+                  opacity: visibleFeature > i ? 1 : 0,
+                  transform: visibleFeature > i ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'opacity 0.4s ease, transform 0.4s ease',
+                }}
               >
-                <div className="space-y-2">
-                  <label htmlFor="pan" className="text-sm font-medium text-gray-300">PAN Number</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-500" />
-                    </div>
-                    <input
-                      id="pan"
-                      type="text"
-                      value={panNumber}
-                      onChange={(e) => setPanNumber(e.target.value.toUpperCase())}
-                      className="block w-full pl-11 pr-4 py-3 bg-gray-950/50 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all uppercase"
-                      placeholder="ABCDE1234F"
-                      required
-                      disabled={isSubmitting}
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !panNumber}
-                  className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    background: '#1e293b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    flexShrink: 0,
+                  }}
                 >
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      Continue <ArrowRight className="ml-2 w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </motion.form>
-            ) : (
-              <motion.form
-                key="step2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                onSubmit={handleVerifyOtp}
-                className="space-y-6"
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label htmlFor="otp" className="text-sm font-medium text-gray-300">Enter OTP</label>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setStep(1);
-                        setError('');
-                      }}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                      Change PAN
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <KeyRound className="h-5 w-5 text-gray-500" />
-                    </div>
-                    <input
-                      id="otp"
-                      type="text"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      className="block w-full pl-11 pr-4 py-3 bg-gray-950/50 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all tracking-widest text-lg"
-                      placeholder="••••••"
-                      required
-                      disabled={isSubmitting}
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Code sent to registered mobile for {panNumber}
-                  </p>
+                  {f.icon}
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !otp}
-                  className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    'Verify & Secure Login'
-                  )}
-                </button>
-              </motion.form>
-            )}
-          </AnimatePresence>
-          
+                <div>
+                  <p style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 600, margin: '0 0 3px' }}>{f.title}</p>
+                  <p style={{ color: '#475569', fontSize: 12, lineHeight: 1.55, margin: 0 }}>{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </motion.div>
+
+        {/* bottom: badge */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+            <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+            <span style={{ color: '#475569', fontSize: 12 }}>Secure channel active · 256-bit TLS</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── RIGHT PANEL ── */}
+      <div
+        className="right-panel"
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px 40px',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <div
+          className="login-card"
+          style={{
+            width: '100%',
+            maxWidth: 400,
+            background: '#ffffff',
+            borderRadius: 16,
+            border: '1px solid #e2e8f0',
+            padding: '40px 36px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* card header */}
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
+              {step === 1 ? 'Enter your PAN' : 'Check your phone'}
+            </h2>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+              {step === 1
+                ? "We'll send a one-time code to your registered mobile."
+                : `Code sent to the number linked with ${panSent}.`}
+            </p>
+          </div>
+
+          <StepDots step={step} />
+          <ErrorBanner message={error} />
+
+          {/* STEP 1 */}
+          {step === 1 && (
+            <form onSubmit={handleSendOtp} key="step1" style={{ animation: 'slideIn 0.3s ease' }}>
+              <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }`}</style>
+              <Input
+                id="pan"
+                label="PAN Number"
+                value={panNumber}
+                onChange={e => setPanNumber(e.target.value.toUpperCase())}
+                placeholder="ABCDE1234F"
+                disabled={isSubmitting}
+                hint="10 characters — 5 letters, 4 digits, 1 letter"
+                autoComplete="off"
+              />
+              <SubmitButton label="Send OTP →" loading={isSubmitting} disabled={!panNumber} />
+            </form>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <form onSubmit={handleVerifyOtp} key="step2" style={{ animation: 'slideIn 0.3s ease' }}>
+              <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }`}</style>
+              <Input
+                id="otp"
+                label="One-time code"
+                value={otp}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                placeholder="• • • • • •"
+                type="text"
+                maxLength={6}
+                disabled={isSubmitting}
+                hint="6-digit code, valid for 10 minutes"
+                autoComplete="one-time-code"
+              />
+
+              <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => { setStep(1); setError(''); setOtp(''); }}
+                  style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+                >
+                  ← Change PAN
+                </button>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+                >
+                  Resend code
+                </button>
+              </div>
+
+              <SubmitButton label="Verify & sign in" loading={isSubmitting} disabled={otp.length < 4} />
+            </form>
+          )}
+
+          {/* Footer note */}
+          <p style={{ textAlign: 'center', fontSize: 11, color: '#cbd5e1', marginTop: 24, marginBottom: 0, lineHeight: 1.6 }}>
+            By continuing you agree to OOMS{' '}
+            <span style={{ color: '#94a3b8', textDecoration: 'underline', cursor: 'pointer' }}>Terms of Access</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Login;
+}

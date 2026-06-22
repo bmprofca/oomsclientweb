@@ -1,14 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 import { LogOut, LayoutDashboard, Activity, Users, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      navigate('/login');
     } catch (e) {
       console.error(e);
     }
@@ -31,45 +31,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <motion.aside 
-        initial={{ x: -250 }}
-        animate={{ x: 0 }}
-        className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col"
-      >
-        <div className="p-6 border-b border-gray-200 flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <LayoutDashboard className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-gray-900">OOMS</span>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <a href="#" className="flex items-center space-x-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-medium transition-colors">
-            <Activity className="w-5 h-5" />
-            <span>Overview</span>
-          </a>
-          <a href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors">
-            <Users className="w-5 h-5" />
-            <span>Clients</span>
-          </a>
-          <a href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors">
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </a>
-        </nav>
-        <div className="p-4 border-t border-gray-200">
-          <button 
-            onClick={handleLogout}
-            className="flex w-full items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-xl font-medium transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </motion.aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8">
+
+      {/* div Content */}
+      <div className="flex-1 p-8">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -124,7 +89,7 @@ const Dashboard = () => {
             <p>Recent activity will appear here</p>
           </div>
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 };
