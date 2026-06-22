@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CheckSquare, Plus, Edit, Trash, Clock, Eye } from 'lucide-react';
+import { CheckSquare, Plus, Edit, Trash, Clock, Eye, List, Activity, CheckCircle } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
 import ManagementCard from '../components/common/ManagementCard';
@@ -20,6 +21,9 @@ const DUMMY_TASKS = Array.from({ length: 60 }, (_, i) => ({
 }));
 
 export default function Task() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [viewMode, setViewMode] = useState('table');
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 10);
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -29,6 +33,35 @@ export default function Task() {
   const [priorityFilter, setPriorityFilter] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+
+  let activeTab = 'all';
+  if (location.pathname.endsWith('/ongoing')) {
+    activeTab = 'ongoing';
+  } else if (location.pathname.endsWith('/completed')) {
+    activeTab = 'completed';
+  }
+
+  useEffect(() => {
+    if (activeTab === 'ongoing') {
+      setStatusFilter({ value: 'In Progress', label: 'In Progress' });
+    } else if (activeTab === 'completed') {
+      setStatusFilter({ value: 'Completed', label: 'Completed' });
+    } else {
+      setStatusFilter(null);
+    }
+  }, [activeTab]);
+
+  const handleTabChange = (tabId) => {
+    if (tabId === 'all') navigate('/tasks');
+    else if (tabId === 'ongoing') navigate('/tasks/ongoing');
+    else if (tabId === 'completed') navigate('/tasks/completed');
+  };
+
+  const tabs = [
+    { id: 'all', label: 'All Tasks', icon: List },
+    { id: 'ongoing', label: 'Ongoing Tasks', icon: Activity },
+    { id: 'completed', label: 'Completed Tasks', icon: CheckCircle },
+  ];
 
   const filteredData = DUMMY_TASKS.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -108,6 +141,9 @@ export default function Task() {
       title="Tasks & Assignments"
       description="Track and manage all operational tasks and deadlines."
       accent="amber"
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
       onRefresh={handleRefresh}
       actions={
         <button className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-amber-600/20">

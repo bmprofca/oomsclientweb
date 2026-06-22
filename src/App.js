@@ -30,6 +30,8 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
               <Route path="/tasks" element={<Task />} />
+              <Route path="/tasks/ongoing" element={<Task />} />
+              <Route path="/tasks/completed" element={<Task />} />
               <Route path="/firms" element={<Firms />} />
             </Route>
 
