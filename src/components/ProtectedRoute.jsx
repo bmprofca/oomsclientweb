@@ -1,18 +1,19 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { GlobalSkeleton } from "./SkeletonComponent";
 
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">Loading...</div>;
+    return <GlobalSkeleton />;
   }
 
-  if (!user) {
+  if (!user?.token) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;

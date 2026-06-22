@@ -1,0 +1,179 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { FaCog } from 'react-icons/fa';
+import ActionMenu from './ActionMenu';
+
+function joinClasses(...classes) {
+  return classes.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function resolveRowKey(row, rowKey, index) {
+  if (typeof rowKey === 'function') return rowKey(row, index);
+  if (row && rowKey in row) return row[rowKey];
+  return index;
+}
+
+export default function ManagementTable({
+  rows = [],
+  columns = [],
+  rowKey = 'id',
+  actions,
+  getActions,
+  activeId,
+  onToggleAction,
+  onRowClick,
+  emptyState,
+  className = '',
+  tableClassName = '',
+  containerClassName = '',
+  headerClassName = '',
+  bodyClassName = '',
+  rowClassName = '',
+  cellClassName = '',
+  accent = 'slate',
+  compact = false,
+  showHeader = true,
+  showActionsColumn = true,
+  actionsHeader = <FaCog className="ml-auto h-4 w-4" />,
+  actionsClassName = '',
+}) {
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(1024);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        setContainerWidth(entries[0].contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const allVisibleColumns = columns.filter((column) => column.visible !== false);
+
+  const getResponsiveColumns = () => {
+    let maxCols = allVisibleColumns.length;
+    if (containerWidth < 340) maxCols = 1;
+    else if (containerWidth < 480) maxCols = 2;
+    else if (containerWidth < 640) maxCols = 3;
+    else if (containerWidth < 768) maxCols = 4;
+    else if (containerWidth < 1024) maxCols = 5;
+    else if (containerWidth < 1280) maxCols = 6;
+    
+    return allVisibleColumns.slice(0, maxCols);
+  };
+
+  const visibleColumns = getResponsiveColumns();
+  const densityClasses = compact ? 'px-3 py-3' : 'px-4 lg:px-6 py-4';
+  const cardAccentMap = {
+    slate: 'border-slate-200 dark:border-gray-700 shadow-slate-200/50 dark:shadow-none',
+    blue: 'border-blue-100 dark:border-blue-900/50 shadow-blue-100/50 dark:shadow-none',
+    green: 'border-green-100 dark:border-green-900/50 shadow-green-100/50 dark:shadow-none',
+    emerald: 'border-emerald-100 dark:border-emerald-900/50 shadow-emerald-100/50 dark:shadow-none',
+    indigo: 'border-indigo-100 dark:border-indigo-900/50 shadow-indigo-100/50 dark:shadow-none',
+    violet: 'border-violet-100 dark:border-violet-900/50 shadow-violet-100/50 dark:shadow-none',
+    amber: 'border-amber-100 dark:border-amber-900/50 shadow-amber-100/50 dark:shadow-none',
+    rose: 'border-rose-100 dark:border-rose-900/50 shadow-rose-100/50 dark:shadow-none',
+  };
+  const cardClass = cardAccentMap[accent] || cardAccentMap.slate;
+
+  if (!rows.length) {
+    return emptyState || null;
+  }
+
+  return (
+    <motion.div
+      ref={containerRef}
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={joinClasses('overflow-hidden rounded-xl bg-white dark:bg-gray-800 w-full', cardClass, containerClassName, className)}
+    >
+      <div className={joinClasses('w-full', tableClassName)}>
+        <table className="w-full table-fixed text-left text-sm text-gray-700 dark:text-gray-300">
+          {showHeader && (
+            <thead className={joinClasses('hidden sm:table-header-group bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-800/50 text-xs uppercase text-gray-600 dark:text-gray-400', headerClassName)}>
+              <tr>
+                {visibleColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={joinClasses(densityClasses, 'font-semibold text-left', column.headerClassName)}
+                  >
+                    {column.label}
+                  </th>
+                ))}
+                {showActionsColumn && (actions || getActions) && (
+                  <th className={joinClasses(densityClasses, 'w-16 text-center', actionsClassName)}>
+                    <div className="flex items-center justify-center">
+                      {actionsHeader}
+                    </div>
+                  </th>
+                )}
+              </tr>
+            </thead>
+          )}
+
+          <tbody className={joinClasses('divide-y divide-gray-100 dark:divide-gray-700/50', bodyClassName)}>
+            {rows.map((row, index) => {
+              const key = resolveRowKey(row, rowKey, index);
+              const rowActions = typeof getActions === 'function' ? getActions(row, index) : actions;
+              const hasRowActions = Array.isArray(rowActions) ? rowActions.length > 0 : Boolean(rowActions);
+              const rowId = `row-${String(key)}`;
+              const resolvedRowClassName = typeof rowClassName === 'function'
+                ? rowClassName(row, index)
+                : rowClassName;
+
+              return (
+                <tr
+                  key={key}
+                  onClick={onRowClick ? () => onRowClick(row, index) : undefined}
+                  className={joinClasses(
+                    'align-middle text-left transition-all duration-200',
+                    onRowClick && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-gray-700/50',
+                    resolvedRowClassName
+                  )}
+                >
+                  {visibleColumns.map((column) => {
+                    const content = typeof column.render === 'function'
+                      ? column.render(row, index)
+                      : row?.[column.key];
+
+                    return (
+                      <td
+                        key={column.key}
+                        className={joinClasses(
+                          densityClasses,
+                          'max-w-[150px] sm:max-w-[200px] lg:max-w-[250px] truncate',
+                          column.className,
+                          cellClassName
+                        )}
+                      >
+                        {content}
+                      </td>
+                    );
+                  })}
+
+                  {showActionsColumn && (actions || getActions) && (
+                    <td className={joinClasses(densityClasses, 'w-16 text-center', actionsClassName)} onClick={(event) => event.stopPropagation()}>
+                      <div className="flex items-center justify-center">
+                        {hasRowActions && (
+                          <ActionMenu
+                            menuId={rowId}
+                            activeId={activeId}
+                            onToggle={onToggleAction}
+                            actions={rowActions}
+                          />
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
+  );
+}
