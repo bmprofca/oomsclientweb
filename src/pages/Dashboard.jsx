@@ -30,7 +30,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex bg-transparent">
 
 
       {/* div Content */}
@@ -40,8 +40,8 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome back!</h1>
-          <p className="text-gray-500 mt-1">Here's what's happening today.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back!</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening today.</p>
         </motion.div>
 
         <motion.div 
@@ -51,27 +51,27 @@ const Dashboard = () => {
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           {/* Stats Cards */}
-          <motion.div variants={item} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <h3 className="text-gray-500 text-sm font-medium">Total Orders</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">1,248</p>
+          <motion.div variants={item} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Orders</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">1,248</p>
             <div className="mt-4 flex items-center text-sm">
               <span className="text-green-500 font-medium">+12.5%</span>
-              <span className="text-gray-400 ml-2">from last month</span>
+              <span className="text-gray-400 dark:text-gray-500 ml-2">from last month</span>
             </div>
           </motion.div>
           
-          <motion.div variants={item} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <h3 className="text-gray-500 text-sm font-medium">Active Outages</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">3</p>
+          <motion.div variants={item} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Active Outages</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">3</p>
             <div className="mt-4 flex items-center text-sm">
               <span className="text-red-500 font-medium">+2</span>
-              <span className="text-gray-400 ml-2">from yesterday</span>
+              <span className="text-gray-400 dark:text-gray-500 ml-2">from yesterday</span>
             </div>
           </motion.div>
 
-          <motion.div variants={item} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <h3 className="text-gray-500 text-sm font-medium">System Health</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">99.9%</p>
+          <motion.div variants={item} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">System Health</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">99.9%</p>
             <div className="mt-4 flex items-center text-sm">
               <span className="text-green-500 font-medium">Optimal</span>
             </div>
@@ -82,9 +82,9 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-96 flex items-center justify-center"
+          className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 h-96 flex items-center justify-center"
         >
-          <div className="text-center text-gray-400">
+          <div className="text-center text-gray-400 dark:text-gray-500">
             <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
             <p>Recent activity will appear here</p>
           </div>
