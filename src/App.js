@@ -7,6 +7,9 @@ import NotFound from "./pages/NotFound";
 import ServerUnreachable from "./pages/ServerUnreachable";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Services from "./pages/Services";
+import Task from "./pages/Task";
+import Firms from "./pages/Firms";
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
             {/* Routes with MainLayout */}
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/tasks" element={<Task />} />
+              <Route path="/firms" element={<Firms />} />
             </Route>
 
             {/* 404 Not Found Route */}

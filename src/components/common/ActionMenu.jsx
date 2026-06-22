@@ -78,6 +78,7 @@ const ActionMenu = ({ actions = [], activeId, onToggle, menuId, trigger }) => {
       window.removeEventListener('scroll', handleScroll, true);
     };
   }, [isMenuOpen, captureCoords, closeMenu]);
+
   // ── Position (all viewport-relative for position:fixed) ──────────────────────
   const menuWidth = 192;
   const menuHeight = actions.length * 44 + 16;
@@ -127,7 +128,14 @@ const ActionMenu = ({ actions = [], activeId, onToggle, menuId, trigger }) => {
             transition-all duration-150
             ${action.disabled
               ? 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-500'
-              : `hover:bg-slate-100 dark:hover:bg-gray-800 hover:pl-4 ${action.className || 'text-slate-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-300'}`
+              : action.className ||
+                (action.danger || action.color === 'red'
+                  ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:pl-4 hover:text-red-700 dark:hover:text-red-300'
+                  : action.color === 'green'
+                    ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:pl-4 hover:text-emerald-700 dark:hover:text-emerald-300'
+                    : action.color === 'blue'
+                      ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:pl-4 hover:text-blue-700 dark:hover:text-blue-300'
+                      : 'text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800 hover:pl-4 hover:text-indigo-600 dark:hover:text-indigo-300')
             }
           `}
         >

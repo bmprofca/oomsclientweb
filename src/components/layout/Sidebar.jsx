@@ -23,13 +23,25 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
     {
       icon: House,
       label: 'Dashboard',
-      path: '/',
+      path: '/dashboard',
+    },
+    {
+      icon: ConciergeBell,
+      label: 'Services',
+      path: '/services',
+      roles: ['admin'],
+    },
+    {
+      icon: ClipboardList,
+      label: 'Tasks',
+      path: '/tasks',
+      roles: ['admin'],
     },
     {
       icon: BrickWall,
-      label:'Firms',
-      path:'/firms',
-      roles:['admin'],
+      label: 'Firms',
+      path: '/firms',
+      roles: ['admin'],
     },
   ];
 
