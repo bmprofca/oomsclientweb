@@ -11,7 +11,7 @@ import Modal from '../components/common/Modal';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
 
 // Dummy Data
-const DUMMY_TASKS = Array.from({ length: 60 }, (_, i) => ({
+export const DUMMY_TASKS = Array.from({ length: 60 }, (_, i) => ({
   id: `tsk-${i + 1}`,
   title: `Task Assignment ${i + 1}`,
   assignee: `User ${Math.floor(Math.random() * 10) + 1}`,

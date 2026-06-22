@@ -10,7 +10,7 @@ import Modal from '../components/common/Modal';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
 
 // Dummy Data
-const DUMMY_FIRMS = Array.from({ length: 35 }, (_, i) => ({
+export const DUMMY_FIRMS = Array.from({ length: 35 }, (_, i) => ({
   id: `frm-${i + 1}`,
   name: `Global Firm ${i + 1}`,
   type: ['Corporation', 'LLC', 'Partnership'][i % 3],

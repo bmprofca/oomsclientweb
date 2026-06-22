@@ -10,6 +10,9 @@ import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
 import Task from "./pages/Task";
 import Firms from "./pages/Firms";
+import Ledger from "./pages/Ledger";
+import Updates from "./pages/updates";
+import Chat from "./pages/Chat";
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
               <Route path="/tasks/ongoing" element={<Task />} />
               <Route path="/tasks/completed" element={<Task />} />
               <Route path="/firms" element={<Firms />} />
+              <Route path="/ledger" element={<Ledger />} />
+              <Route path="/updates" element={<Updates />} />
+              <Route path="/chat" element={<Chat />} />
             </Route>
 
             {/* 404 Not Found Route */}

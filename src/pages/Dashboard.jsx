@@ -1,17 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogOut, LayoutDashboard, Activity, Users, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Wallet, Activity, CheckCircle, Building2, CreditCard, ArrowRight } from 'lucide-react';
+import { DUMMY_FIRMS } from './Firms';
+import { DUMMY_TASKS } from './Task';
+import { formatAmount } from '../utils/helpers';
+import { useToast } from '../contexts/ToastContext';
+import Modal from '../components/common/Modal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const showToast = useToast();
 
-  const handleLogout = async () => {
-    try {
-      navigate('/login');
-    } catch (e) {
-      console.error(e);
+  // Local state for interactive balance and payment modal
+  const [balance, setBalance] = useState(24500);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [isPaying, setIsPaying] = useState(false);
+
+  // Dynamic calculations from existing files
+  const firmCount = DUMMY_FIRMS.length;
+  const runningTaskCount = DUMMY_TASKS.filter(task => task.status === 'In Progress').length;
+  const completedTaskCount = DUMMY_TASKS.filter(task => task.status === 'Completed').length;
+
+  const handlePayNow = () => {
+    if (balance <= 0) {
+      showToast.info('Your balance is already paid!');
+      return;
     }
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleConfirmPayment = () => {
+    setIsPaying(true);
+    // Simulate API delay
+    setTimeout(() => {
+      showToast.success(`Payment of ${formatAmount(balance)} successfully processed!`);
+      setBalance(0);
+      setIsPaying(false);
+      setIsPaymentModalOpen(false);
+    }, 1200);
   };
 
   const container = {
@@ -31,67 +59,216 @@ const Dashboard = () => {
 
   return (
     <div className="flex bg-transparent">
-
-
-      {/* div Content */}
+      {/* Main Content */}
       <div className="flex-1">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back!</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening today.</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back!</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening today.</p>
+          </div>
+          
+          {/* Quick theme-matching action card for quick top-up if balance is 0 */}
+          {balance === 0 && (
+            <motion.button
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              onClick={() => setBalance(24500)}
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors"
+            >
+              Reset Balance to ₹24,500 (Demo)
+            </motion.button>
+          )}
         </motion.div>
 
+        {/* Top metrics and financial status */}
         <motion.div 
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {/* Stats Cards */}
-          <motion.div variants={item} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Orders</h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">1,248</p>
-            <div className="mt-4 flex items-center text-sm">
-              <span className="text-green-500 font-medium">+12.5%</span>
-              <span className="text-gray-400 dark:text-gray-500 ml-2">from last month</span>
+          {/* 1. Balance & Pay Now Card */}
+          <motion.div 
+            variants={item} 
+            className="col-span-1 md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-700 dark:to-indigo-900 p-6 rounded-2xl shadow-lg border border-blue-500/20 text-white flex flex-col justify-between min-h-[180px] hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-none transition-all relative overflow-hidden"
+          >
+            {/* Background design elements for card */}
+            <div className="absolute right-0 bottom-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mb-8 pointer-events-none" />
+            <div className="absolute left-1/3 top-0 w-24 h-24 bg-blue-400/10 rounded-full blur-xl pointer-events-none" />
+            
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-blue-100 text-xs font-semibold tracking-wider uppercase">Account Balance</p>
+                <h3 className="text-3xl font-extrabold mt-1 tracking-tight">
+                  {formatAmount(balance)}
+                </h3>
+              </div>
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3 items-center justify-between">
+              <span className="text-xs text-blue-100">
+                {balance > 0 ? "Pending dues requires immediate clearing" : "All dues are successfully cleared"}
+              </span>
+              <button 
+                onClick={handlePayNow}
+                disabled={balance <= 0}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all ${
+                  balance > 0 
+                    ? "bg-white text-indigo-700 hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]" 
+                    : "bg-white/20 text-white/60 cursor-not-allowed"
+                }`}
+              >
+                <span>{balance > 0 ? "Pay Now" : "Paid"}</span>
+                {balance > 0 && <ArrowRight size={16} />}
+              </button>
+            </div>
+          </motion.div>
+
+          {/* 2. Registered Firms Card */}
+          <motion.div 
+            variants={item} 
+            onClick={() => navigate('/firms')}
+            className="cursor-pointer bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all flex flex-col justify-between"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Registered Firms</h3>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{firmCount}</p>
+              </div>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <Building2 className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-xs text-indigo-600 dark:text-indigo-400 font-semibold gap-1">
+              <span>View Firms</span>
+              <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
             </div>
           </motion.div>
           
-          <motion.div variants={item} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Active Outages</h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">3</p>
-            <div className="mt-4 flex items-center text-sm">
-              <span className="text-red-500 font-medium">+2</span>
-              <span className="text-gray-400 dark:text-gray-500 ml-2">from yesterday</span>
+          {/* 3. Running Tasks Card */}
+          <motion.div 
+            variants={item} 
+            onClick={() => navigate('/tasks/ongoing')}
+            className="cursor-pointer bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all flex flex-col justify-between"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Running Tasks</h3>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{runningTaskCount}</p>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600 dark:text-amber-400">
+                <Activity className="w-5 h-5" />
+              </div>
             </div>
-          </motion.div>
-
-          <motion.div variants={item} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">System Health</h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">99.9%</p>
-            <div className="mt-4 flex items-center text-sm">
-              <span className="text-green-500 font-medium">Optimal</span>
+            <div className="mt-4 flex items-center text-xs text-amber-600 dark:text-amber-400 font-semibold gap-1">
+              <span>Track Running tasks</span>
+              <ArrowRight size={12} />
             </div>
           </motion.div>
         </motion.div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 h-96 flex items-center justify-center"
-        >
-          <div className="text-center text-gray-400 dark:text-gray-500">
-            <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p>Recent activity will appear here</p>
-          </div>
-        </motion.div>
+        {/* Secondary metrics and activity grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          {/* 4. Completed Tasks Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={() => navigate('/tasks/completed')}
+            className="cursor-pointer bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all flex flex-col justify-between"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Completed Tasks</h3>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{completedTaskCount}</p>
+              </div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-600 dark:text-emerald-400">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-xs text-emerald-600 dark:text-emerald-400 font-semibold gap-1">
+              <span>View Completed task</span>
+              <ArrowRight size={12} />
+            </div>
+          </motion.div>
+
+          {/* Activity Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col justify-center min-h-[140px]"
+          >
+            <div className="text-center text-gray-400 dark:text-gray-500 py-4">
+              <Activity className="w-8 h-8 mx-auto mb-2 opacity-20" />
+              <p className="text-sm">Metrics are connected and loaded from live local configurations.</p>
+            </div>
+          </motion.div>
+        </div>
       </div>
+
+      {/* Payment Confirmation Modal */}
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title="Complete Outstanding Payment"
+        icon={CreditCard}
+        confirmText={isPaying ? "Processing..." : "Confirm Payment"}
+        onConfirm={handleConfirmPayment}
+      >
+        <div className="space-y-4 text-slate-700 dark:text-gray-300">
+          <div className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-gray-800">
+            <p className="text-xs text-slate-500 dark:text-gray-400">Total Payable Amount</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
+              {formatAmount(balance)}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              Select Payment Mode
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('upi')}
+                className={`p-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-2 justify-center ${
+                  paymentMethod === 'upi'
+                    ? "border-blue-600 bg-blue-50/50 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400"
+                    : "border-slate-200 hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600 text-slate-600 dark:text-gray-400"
+                }`}
+              >
+                <span>⚡</span> UPI / Net Banking
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('card')}
+                className={`p-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-2 justify-center ${
+                  paymentMethod === 'card'
+                    ? "border-blue-600 bg-blue-50/50 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400"
+                    : "border-slate-200 hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600 text-slate-600 dark:text-gray-400"
+                }`}
+              >
+                <span>💳</span> Credit / Debit Card
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-2">
+            By clicking confirm, you consent to simulate this payment using local dummy values.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default Dashboard;
+

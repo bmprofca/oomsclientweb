@@ -9,6 +9,9 @@ import {
   FileBox,
   BrickWall,
   IndianRupee,
+  Receipt,
+  FileClock,
+  MessageSquare,
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 
@@ -41,6 +44,24 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       icon: BrickWall,
       label: 'Firms',
       path: '/firms',
+      roles: ['admin'],
+    },
+    {
+      icon: Receipt,
+      label: 'Ledger',
+      path: '/ledger',
+      roles: ['admin'],
+    },
+    {
+      icon: FileClock,
+      label: 'Updates',
+      path: '/updates',
+      roles: ['admin'],
+    },
+    {
+      icon: MessageSquare,
+      label: 'Consultant Chat',
+      path: '/chat',
       roles: ['admin'],
     },
   ];
