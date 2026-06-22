@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckSquare, Plus, Edit, Trash, Clock, Eye, List, Activity, CheckCircle } from 'lucide-react';
+import { CheckSquare, Plus, Edit, Trash, Clock, Eye, List, Activity, CheckCircle, Upload } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
@@ -131,6 +131,7 @@ export default function Task() {
 
   const getRowActions = (row) => [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
+    { id: 'upload', label: 'Upload Documents', icon: <Upload size={14} />, color: 'indigo', onClick: () => navigate(`/tasks/${row.id}/documents`) },
     { id: 'edit', label: 'Edit Task', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.id) },
     { id: 'delete', label: 'Delete', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.id) },
   ];
@@ -285,6 +286,15 @@ export default function Task() {
                 <Clock size={14} />
                 {selectedItem.dueDate}
               </p>
+            </div>
+            <div className="pt-4 mt-2 border-t border-slate-200 dark:border-slate-700">
+               <button 
+                 onClick={() => navigate(`/tasks/${selectedItem.id}/documents`)}
+                 className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg transition-colors font-medium w-full justify-center"
+               >
+                 <Upload size={16} />
+                 Upload Task Documents
+               </button>
             </div>
           </div>
         )}
