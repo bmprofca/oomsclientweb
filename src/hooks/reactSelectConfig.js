@@ -26,8 +26,8 @@ export const getReactSelectStyles = (theme = 'light') => {
       '&:hover': {
         borderColor: state.isFocused ? '#6366f1' : colors.controlBorderHover,
       },
-      minHeight: '42px',
-      fontSize: '0.875rem',
+      minHeight: typeof window !== 'undefined' && window.innerWidth < 640 ? '32px' : '42px',
+      fontSize: typeof window !== 'undefined' && window.innerWidth < 640 ? '0.75rem' : '0.875rem',
       transition: 'border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease',
     };
   },
