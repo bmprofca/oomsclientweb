@@ -2,11 +2,26 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, Activity, CheckCircle, Building2, CreditCard, ArrowRight } from 'lucide-react';
-import { DUMMY_FIRMS } from './Firms';
-import { DUMMY_TASKS } from './Task';
 import { formatAmount } from '../utils/helpers';
 import { useToast } from '../contexts/ToastContext';
 import Modal from '../components/common/Modal';
+
+// ─── Dashboard-local dummy data (independent of Firms/Task pages) ────────────
+// Replace these with your real dashboard API call when ready.
+const DASHBOARD_FIRMS = [
+  { id: 1, name: 'Alpha Corp' },
+  { id: 2, name: 'Beta Ltd' },
+  { id: 3, name: 'Gamma Inc' },
+];
+
+const DASHBOARD_TASKS = [
+  { id: 1, title: 'GST Filing – Q1',       status: 'In Progress' },
+  { id: 2, title: 'ITR Preparation',        status: 'In Progress' },
+  { id: 3, title: 'Audit Report – FY24',    status: 'Completed'   },
+  { id: 4, title: 'Balance Sheet Review',   status: 'Completed'   },
+  { id: 5, title: 'TDS Return',             status: 'Completed'   },
+];
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -18,10 +33,10 @@ const Dashboard = () => {
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isPaying, setIsPaying] = useState(false);
 
-  // Dynamic calculations from existing files
-  const firmCount = DUMMY_FIRMS.length;
-  const runningTaskCount = DUMMY_TASKS.filter(task => task.status === 'In Progress').length;
-  const completedTaskCount = DUMMY_TASKS.filter(task => task.status === 'Completed').length;
+  // Dynamic calculations from dashboard-local data
+  const firmCount         = DASHBOARD_FIRMS.length;
+  const runningTaskCount  = DASHBOARD_TASKS.filter(t => t.status === 'In Progress').length;
+  const completedTaskCount = DASHBOARD_TASKS.filter(t => t.status === 'Completed').length;
 
   const handlePayNow = () => {
     if (balance <= 0) {
@@ -33,7 +48,6 @@ const Dashboard = () => {
 
   const handleConfirmPayment = () => {
     setIsPaying(true);
-    // Simulate API delay
     setTimeout(() => {
       showToast.success(`Payment of ${formatAmount(balance)} successfully processed!`);
       setBalance(0);
@@ -44,24 +58,19 @@ const Dashboard = () => {
 
   const container = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
+    show:   { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    show:   { opacity: 1, y: 0 },
   };
 
   return (
     <div className="flex bg-transparent">
       {/* Main Content */}
       <div className="flex-1">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
@@ -70,8 +79,8 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back!</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening today.</p>
           </div>
-          
-          {/* Quick theme-matching action card for quick top-up if balance is 0 */}
+
+          {/* Reset demo balance button */}
           {balance === 0 && (
             <motion.button
               initial={{ scale: 0.9, opacity: 0 }}
@@ -84,28 +93,25 @@ const Dashboard = () => {
           )}
         </motion.div>
 
-        {/* Top metrics and financial status */}
-        <motion.div 
+        {/* Top metrics */}
+        <motion.div
           variants={container}
           initial="hidden"
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {/* 1. Balance & Pay Now Card */}
-          <motion.div 
-            variants={item} 
+          <motion.div
+            variants={item}
             className="col-span-1 md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-700 dark:to-indigo-900 p-6 rounded-2xl shadow-lg border border-blue-500/20 text-white flex flex-col justify-between min-h-[180px] hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-none transition-all relative overflow-hidden"
           >
-            {/* Background design elements for card */}
             <div className="absolute right-0 bottom-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mb-8 pointer-events-none" />
             <div className="absolute left-1/3 top-0 w-24 h-24 bg-blue-400/10 rounded-full blur-xl pointer-events-none" />
-            
+
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-blue-100 text-xs font-semibold tracking-wider uppercase">Account Balance</p>
-                <h3 className="text-3xl font-extrabold mt-1 tracking-tight">
-                  {formatAmount(balance)}
-                </h3>
+                <h3 className="text-3xl font-extrabold mt-1 tracking-tight">{formatAmount(balance)}</h3>
               </div>
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">
                 <Wallet className="w-6 h-6 text-white" />
@@ -114,26 +120,26 @@ const Dashboard = () => {
 
             <div className="mt-6 flex flex-wrap gap-3 items-center justify-between">
               <span className="text-xs text-blue-100">
-                {balance > 0 ? "Pending dues requires immediate clearing" : "All dues are successfully cleared"}
+                {balance > 0 ? 'Pending dues requires immediate clearing' : 'All dues are successfully cleared'}
               </span>
-              <button 
+              <button
                 onClick={handlePayNow}
                 disabled={balance <= 0}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all ${
-                  balance > 0 
-                    ? "bg-white text-indigo-700 hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]" 
-                    : "bg-white/20 text-white/60 cursor-not-allowed"
+                  balance > 0
+                    ? 'bg-white text-indigo-700 hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'
+                    : 'bg-white/20 text-white/60 cursor-not-allowed'
                 }`}
               >
-                <span>{balance > 0 ? "Pay Now" : "Paid"}</span>
+                <span>{balance > 0 ? 'Pay Now' : 'Paid'}</span>
                 {balance > 0 && <ArrowRight size={16} />}
               </button>
             </div>
           </motion.div>
 
           {/* 2. Registered Firms Card */}
-          <motion.div 
-            variants={item} 
+          <motion.div
+            variants={item}
             onClick={() => navigate('/firms')}
             className="cursor-pointer bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all flex flex-col justify-between"
           >
@@ -148,13 +154,13 @@ const Dashboard = () => {
             </div>
             <div className="mt-4 flex items-center text-xs text-indigo-600 dark:text-indigo-400 font-semibold gap-1">
               <span>View Firms</span>
-              <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
+              <ArrowRight size={12} />
             </div>
           </motion.div>
-          
+
           {/* 3. Running Tasks Card */}
-          <motion.div 
-            variants={item} 
+          <motion.div
+            variants={item}
             onClick={() => navigate('/tasks/ongoing')}
             className="cursor-pointer bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all flex flex-col justify-between"
           >
@@ -174,10 +180,10 @@ const Dashboard = () => {
           </motion.div>
         </motion.div>
 
-        {/* Secondary metrics and activity grid */}
+        {/* Secondary metrics */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* 4. Completed Tasks Card */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -199,8 +205,8 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* Activity Section */}
-          <motion.div 
+          {/* Activity placeholder */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -220,7 +226,7 @@ const Dashboard = () => {
         onClose={() => setIsPaymentModalOpen(false)}
         title="Complete Outstanding Payment"
         icon={CreditCard}
-        confirmText={isPaying ? "Processing..." : "Confirm Payment"}
+        confirmText={isPaying ? 'Processing...' : 'Confirm Payment'}
         onConfirm={handleConfirmPayment}
       >
         <div className="space-y-4 text-slate-700 dark:text-gray-300">
@@ -241,8 +247,8 @@ const Dashboard = () => {
                 onClick={() => setPaymentMethod('upi')}
                 className={`p-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-2 justify-center ${
                   paymentMethod === 'upi'
-                    ? "border-blue-600 bg-blue-50/50 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400"
-                    : "border-slate-200 hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600 text-slate-600 dark:text-gray-400"
+                    ? 'border-blue-600 bg-blue-50/50 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600 text-slate-600 dark:text-gray-400'
                 }`}
               >
                 <span>⚡</span> UPI / Net Banking
@@ -252,8 +258,8 @@ const Dashboard = () => {
                 onClick={() => setPaymentMethod('card')}
                 className={`p-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-2 justify-center ${
                   paymentMethod === 'card'
-                    ? "border-blue-600 bg-blue-50/50 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400"
-                    : "border-slate-200 hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600 text-slate-600 dark:text-gray-400"
+                    ? 'border-blue-600 bg-blue-50/50 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600 text-slate-600 dark:text-gray-400'
                 }`}
               >
                 <span>💳</span> Credit / Debit Card
@@ -271,4 +277,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

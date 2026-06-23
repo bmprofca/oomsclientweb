@@ -251,7 +251,7 @@ export default function Login() {
         
         if (profileRes.ok && profileData.success !== false && profileData.data && profileData.data.length > 0) {
           if (profileData.data.length === 1) {
-            login(data.token, profileData.data[0]);
+            login(data.token, profileData.data[0], { countrycode: countryCode, mobile: mobileSent });
           } else {
             setProfiles(profileData.data);
             setStep(3);
@@ -272,7 +272,7 @@ export default function Login() {
   };
 
   const handleProfileSelect = (profile) => {
-    login(tempToken, profile);
+    login(tempToken, profile, { countrycode: countryCode, mobile: mobileSent });
   };
 
   return (

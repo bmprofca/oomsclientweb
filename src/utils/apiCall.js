@@ -13,11 +13,15 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
   const userDataStr = localStorage.getItem('ooms_user_data');
   let token = null;
   let username = null;
+  let mobile = null;
+  let countrycode = null;
   if (userDataStr) {
     try {
       const userData = JSON.parse(userDataStr);
       token = userData.token;
       username = userData.username;
+      mobile = userData.mobile;
+      countrycode = userData.country_code;
     } catch (e) {
       console.error("Failed to parse ooms_user_data from local storage", e);
     }
@@ -37,6 +41,14 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
 
   if (username) {
     headers['username'] = username;
+  }
+
+  if (countrycode) {
+    headers['countrycode'] = countrycode;
+  }
+
+  if (mobile) {
+    headers['mobile'] = mobile;
   }
 
   const options = {

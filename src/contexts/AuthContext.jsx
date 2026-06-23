@@ -24,8 +24,8 @@ export const AuthProvider = ({ children }) => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  const login = (token, profile) => {
-    const newData = { token, ...profile };
+  const login = (token, profile, authMeta = {}) => {
+    const newData = { token, ...profile, ...authMeta };
     setUserData(newData);
     localStorage.setItem('ooms_user_data', JSON.stringify(newData));
     navigate('/dashboard');
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = (profile) => {
     if (userData && userData.token) {
-      const newData = { token: userData.token, ...profile };
+      const newData = { ...userData, ...profile };
       setUserData(newData);
       localStorage.setItem('ooms_user_data', JSON.stringify(newData));
       // Optionally navigate to dashboard after switching profile
