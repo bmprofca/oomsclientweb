@@ -143,7 +143,7 @@ export default function Task() {
       actions={null}
       summary={null}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-2">
 
         <ManagementFilters
           viewMode={viewMode}
@@ -195,7 +195,7 @@ export default function Task() {
                 accent="amber"
                 icon={<CheckSquare size={16} />}
                 badge={
-                  <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold ${getStatusColor(task.status)}`}>
+                  <span className={`px-2 py-0.5 whitespace-nowrap rounded-md text-[10px] uppercase font-bold ${getStatusColor(task.status)}`}>
                     {task.status || 'UNKNOWN'}
                   </span>
                 }

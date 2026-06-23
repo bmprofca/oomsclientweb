@@ -40,7 +40,7 @@ export default function ManagementCard({
   const cardBody = (
     <div
       className={joinClasses(
-        'rounded-md border bg-white dark:bg-gray-800 p-2.5 shadow-sm transition-all duration-300',
+        'rounded-md border bg-white dark:bg-gray-800 p-2.5 shadow-sm transition-all duration-300 flex flex-col h-full',
         accentMap[accent] || accentMap.slate,
         hoverable && 'hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-gray-900/50',
         onClick && 'cursor-pointer',
@@ -60,8 +60,12 @@ export default function ManagementCard({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            {badge}
+          <div className="flex shrink-0 items-center gap-1.5 relative">
+            {badge && (
+              <div className="absolute right-full top-1/2 -translate-y-1/2 pr-1.5 z-10">
+                {badge}
+              </div>
+            )}
             {headerAction}
             {actions && (
               <ActionMenu
@@ -75,7 +79,7 @@ export default function ManagementCard({
         </div>
       )}
 
-      <div className={bodyClassName}>{children}</div>
+      <div className={joinClasses('flex-1 flex flex-col justify-end', bodyClassName)}>{children}</div>
 
       {footer && (
         <div className={joinClasses('mt-2 flex items-center justify-between gap-1.5 border-t border-slate-100 dark:border-gray-700 pt-2', footerClassName)}>
@@ -90,6 +94,7 @@ export default function ManagementCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
+      className="h-full"
     >
       {cardBody}
     </motion.div>

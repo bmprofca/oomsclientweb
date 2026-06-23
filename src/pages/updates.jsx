@@ -164,7 +164,7 @@ export default function Updates() {
       accent="indigo"
       onRefresh={() => console.log('Refreshing timeline updates...')}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-2">
         <ManagementFilters
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}

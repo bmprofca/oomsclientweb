@@ -129,7 +129,7 @@ export default function Services() {
       actions={null}
       summary={null}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-2">
 
         <ManagementFilters
           viewMode={viewMode}

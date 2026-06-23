@@ -13,49 +13,45 @@ export default function ManagementFilters({
   className = '',
 }) {
   return (
-    <div className={`bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-md border border-slate-200 dark:border-gray-700 flex flex-col md:flex-row gap-2 md:gap-3 md:items-center justify-between shadow-sm ${className}`}>
+    <div className={`bg-white/90 dark:bg-gray-900/90 backdrop-blur p-2 sm:p-3 rounded-md border border-slate-200 dark:border-gray-700 flex flex-row flex-wrap gap-2 items-center shadow-sm ${className}`}>
 
-      {/* Search and Filters Container */}
-      <div className="flex flex-col sm:flex-row flex-1 gap-2 sm:gap-3 w-full md:w-auto">
+      {/* Search Input */}
+      {(onSearchChange !== undefined || searchValue !== undefined) && (
+        <div className="relative flex-[1_1_100%] sm:flex-[1_1_auto] sm:max-w-xs order-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={16} className="text-slate-400 dark:text-gray-500" />
+          </div>
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200 text-xs sm:text-sm rounded-md pl-9 pr-3 py-1.5 sm:py-2 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+          />
+        </div>
+      )}
 
-        {/* Search Input */}
-        {(onSearchChange !== undefined || searchValue !== undefined) && (
-          <div className="relative w-full sm:max-w-xs md:max-w-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className="text-slate-400 dark:text-gray-500" />
+      {/* Dynamic Select Filters */}
+      {filters.length > 0 && (
+        <div className="flex flex-row flex-wrap gap-2 flex-[1_1_auto] order-2 sm:order-2">
+          {filters.map((filter, index) => (
+            <div key={index} className="flex-1 min-w-[120px] sm:flex-none">
+              <SelectField
+                value={filter.value}
+                onChange={filter.onChange}
+                options={filter.options}
+                placeholder={filter.placeholder}
+                isClearable={filter.isClearable}
+                className="text-xs sm:text-sm"
+              />
             </div>
-            <input
-              type="text"
-              value={searchValue}
-              onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200 text-xs sm:text-sm rounded-md pl-9 pr-3 py-1.5 sm:py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-            />
-          </div>
-        )}
-
-        {/* Dynamic Select Filters */}
-        {filters.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 sm:gap-3 flex-1">
-            {filters.map((filter, index) => (
-              <div key={index} className="w-full sm:w-auto min-w-[140px] rounded-md">
-                <SelectField
-                  value={filter.value}
-                  onChange={filter.onChange}
-                  options={filter.options}
-                  placeholder={filter.placeholder}
-                  isClearable={filter.isClearable}
-                  className="text-xs sm:text-sm"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* View Switcher Container */}
       {(viewMode && onViewModeChange) && (
-        <div className="flex justify-end pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-gray-700 shrink-0">
+        <div className="flex shrink-0 order-3 ml-auto">
           <ManagementViewSwitcher viewMode={viewMode} onChange={onViewModeChange} />
         </div>
       )}
