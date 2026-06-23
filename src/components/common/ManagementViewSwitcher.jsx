@@ -17,7 +17,7 @@ export default function ManagementViewSwitcher({
   className = '',
 }) {
   const buttonClass = (mode) =>
-    `px-4 py-2 rounded-md text-sm font-semibold transition-all flex items-center gap-2 ${viewMode === mode ? colorClasses.active : colorClasses.inactive
+    `px-2 py-1.5 sm:px-4 sm:py-2 rounded-md text-[11px] sm:text-sm font-semibold transition-all flex items-center gap-1 sm:gap-2 ${viewMode === mode ? colorClasses.active : colorClasses.inactive
     }`;
 
   const TableIcon = iconByView.table;
@@ -25,12 +25,12 @@ export default function ManagementViewSwitcher({
 
   return (
     <div className={`flex justify-end w-full ${className}`.trim()}>
-      <div className="inline-flex items-center gap-1 p-1">
+      <div className="inline-flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1">
         <button type="button" onClick={() => onChange('table')} className={buttonClass('table')}>
-          <TableIcon size={14} />
+          <TableIcon className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]" />
         </button>
         <button type="button" onClick={() => onChange('card')} className={buttonClass('card')}>
-          <CardIcon size={14} />
+          <CardIcon className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]" />
         </button>
       </div>
     </div>

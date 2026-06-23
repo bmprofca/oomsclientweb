@@ -32,6 +32,7 @@ const SelectField = ({ styles, ...props }) => {
   return (
     <Select
       key={theme}
+      classNamePrefix={props.classNamePrefix || "ooms-select"}
       {...getReactSelectMenuProps()}
       {...props}
       styles={mergedStyles}

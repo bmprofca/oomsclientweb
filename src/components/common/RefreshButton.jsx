@@ -24,7 +24,7 @@ export default function RefreshButton({
       disabled={loading}
       title={title}
       className={joinClasses(
-        'inline-flex items-center justify-center gap-1.5 md:gap-2 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 md:px-4 md:py-2 text-[11px] md:text-sm font-semibold text-slate-700 dark:text-gray-200 shadow-sm transition-all duration-200 hover:bg-slate-50 dark:hover:bg-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex absolute top-[10px] items-center justify-center gap-1.5 md:gap-2 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 md:px-4 md:py-2 text-[11px] md:text-sm font-semibold text-slate-700 dark:text-gray-200 shadow-sm transition-all duration-200 hover:bg-slate-50 dark:hover:bg-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60',
         className
       )}
       {...rest}
