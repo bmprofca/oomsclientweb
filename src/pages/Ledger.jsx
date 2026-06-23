@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Receipt, Eye, TrendingUp, TrendingDown, Wallet, ArrowRightLeft, RefreshCw,
+  Receipt, Eye, TrendingUp, TrendingDown, Wallet, ArrowRightLeft,
 } from 'lucide-react';
-import { FaTh, FaListUl, FaSyncAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaTh, FaListUl, FaChevronLeft, FaChevronRight, FaEllipsisV } from 'react-icons/fa';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
 import ManagementCard from '../components/common/ManagementCard';
 import ManagementGrid from '../components/common/ManagementGrid';
+import ActionMenu from '../components/common/ActionMenu';
 import AdvancedDateFilter from '../components/common/AdvancedDateFilter';
 import SelectField from '../components/common/SelectField';
 import Modal from '../components/common/Modal';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
-import { formatAmount, formatDate } from '../utils/helpers';
+import { formatAmount } from '../utils/helpers';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 
@@ -72,31 +73,16 @@ const TYPE_OPTIONS = [
   { value: 'journal', label: 'Journal' },
 ];
 
-// ── Stat card — matches Dashboard style ──────────────────────────────────────
+const OPENING_BALANCE_ROW_ID = 'opening-balance-row';
 
-function StatCard({ label, value, valueClass, iconBg, Icon, subtext }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between min-w-0">
-      <div className="flex justify-between items-start">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider truncate">
-            {label}
-          </h3>
-          <p className={`text-xl font-bold mt-1.5 tabular-nums truncate ${valueClass}`}>
-            {value}
-          </p>
-        </div>
-        <div className={`ml-3 shrink-0 p-2.5 rounded-md ${iconBg}`}>
-          <Icon className="w-4 h-4" />
-        </div>
-      </div>
-      {subtext && (
-        <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 truncate">{subtext}</p>
-      )}
-    </div>
-  );
+function formatLedgerDate(date) {
+  if (!date) return '—';
+  const parsed = new Date(`${date}`.includes('T') ? date : `${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${parsed.getFullYear()}`;
 }
-
 // ── Compact view toggle ───────────────────────────────────────────────────────
 
 function ViewToggle({ viewMode, onChange }) {
@@ -121,10 +107,26 @@ function ViewToggle({ viewMode, onChange }) {
   );
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  return isMobile;
+}
+
 // ── component ─────────────────────────────────────────────────────────────────
 
 export default function Ledger() {
   const [viewMode, setViewMode] = useState('table');
+  const isMobile = useIsMobile();
+  const effectiveViewMode = isMobile ? 'card' : viewMode;
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [typeFilter, setTypeFilter] = useState(null);
@@ -180,14 +182,6 @@ export default function Ledger() {
     return () => clearTimeout(t);
   }, [fetchTransactions]);
 
-  // ── computed ──────────────────────────────────────────────────────────────────
-
-  const totalDebit = transactions.reduce((a, t) => a + (t.payment?.debit || 0), 0);
-  const totalCredit = transactions.reduce((a, t) => a + (t.payment?.credit || 0), 0);
-  const closingBalance = transactions.length > 0
-    ? transactions[transactions.length - 1].payment?.balance ?? openingBalance.balance
-    : openingBalance.balance;
-
   // ── handlers ──────────────────────────────────────────────────────────────────
 
   const handleViewDetails = (item) => { setSelectedItem(item); setIsModalOpen(true); };
@@ -232,19 +226,39 @@ export default function Ledger() {
 
   const tableColumns = [
     {
-      key: 'invoice_no',
-      label: 'Invoice No.',
-      render: (row) => <span className="font-bold text-slate-800 dark:text-gray-100">{row.invoice_no}</span>,
+      key: 'serial_no',
+      label: 'S.No',
+      headerClassName: 'w-16',
+      className: 'w-16 text-center',
+      render: (row, index) => (
+        <span className="font-semibold text-slate-500 dark:text-slate-400">
+          {row.isOpeningBalance ? '-' : index}
+        </span>
+      ),
     },
     {
       key: 'transaction_date',
       label: 'Date',
-      render: (row) => <span className="text-slate-600 dark:text-slate-400">{formatDate(row.transaction_date)}</span>,
+      render: (row) => (
+        row.isOpeningBalance
+          ? <span className="font-bold text-slate-900 dark:text-gray-100">Opening Balance</span>
+          : <span className="text-slate-600 dark:text-slate-400">{formatLedgerDate(row.transaction_date)}</span>
+      ),
+    },
+    {
+      key: 'invoice_no',
+      label: 'Invoice No.',
+      render: (row) => (
+        <span className="font-bold text-slate-800 dark:text-gray-100">
+          {row.isOpeningBalance ? '' : row.invoice_no}
+        </span>
+      ),
     },
     {
       key: 'transaction_type',
       label: 'Type',
       render: (row) => {
+        if (row.isOpeningBalance) return null;
         const cfg = getTypeConfig(row.transaction_type);
         return <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</span>;
       },
@@ -253,7 +267,7 @@ export default function Ledger() {
       key: 'debit',
       label: 'Debit (₹)',
       render: (row) => (
-        <span className={`font-medium tabular-nums ${row.payment?.debit ? 'text-blue-700 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
+        <span className={`font-medium tabular-nums ${row.payment?.debit ? 'text-blue-700 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
           {row.payment?.debit ? formatAmount(row.payment.debit) : '—'}
         </span>
       ),
@@ -262,7 +276,7 @@ export default function Ledger() {
       key: 'credit',
       label: 'Credit (₹)',
       render: (row) => (
-        <span className={`font-medium tabular-nums ${row.payment?.credit ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'}`}>
+        <span className={`font-medium tabular-nums ${row.payment?.credit ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
           {row.payment?.credit ? formatAmount(row.payment.credit) : '—'}
         </span>
       ),
@@ -281,48 +295,21 @@ export default function Ledger() {
     },
   ];
 
-  const getRowActions = (row) => [
+  const ledgerRows = [
+    {
+      transaction_id: OPENING_BALANCE_ROW_ID,
+      isOpeningBalance: true,
+      payment: {
+        debit: openingBalance.debit || 0,
+        credit: openingBalance.credit || 0,
+        balance: openingBalance.balance || 0,
+      },
+    },
+    ...transactions,
+  ];
+  const getRowActions = (row) => row.isOpeningBalance ? [] : [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
   ];
-
-  // ── Summary — 4 stat cards matching Dashboard style ───────────────────────────
-
-  const summary = (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-      <StatCard
-        label="Opening Balance"
-        value={formatAmount(openingBalance.balance)}
-        valueClass={openingBalance.balance >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'}
-        iconBg="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300"
-        Icon={Wallet}
-        subtext="Balance carried forward"
-      />
-      <StatCard
-        label="Total Debit"
-        value={formatAmount(totalDebit)}
-        valueClass="text-blue-700 dark:text-blue-400"
-        iconBg="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
-        Icon={TrendingUp}
-        subtext="Billed in this period"
-      />
-      <StatCard
-        label="Total Credit"
-        value={formatAmount(totalCredit)}
-        valueClass="text-emerald-700 dark:text-emerald-400"
-        iconBg="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
-        Icon={TrendingDown}
-        subtext="Received in this period"
-      />
-      <StatCard
-        label="Closing Balance"
-        value={formatAmount(closingBalance)}
-        valueClass={closingBalance >= 0 ? 'text-amber-700 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}
-        iconBg="bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
-        Icon={Wallet}
-        subtext={closingBalance >= 0 ? 'Net receivable' : 'Net payable'}
-      />
-    </div>
-  );
 
   // ── render ────────────────────────────────────────────────────────────────────
 
@@ -331,12 +318,14 @@ export default function Ledger() {
       title="Transaction Ledger"
       description="Sales, receipts, payments &amp; journal entries."
       accent="emerald"
-      summary={summary}
       actions={null}
-      onRefresh={undefined}
+      onRefresh={() => fetchTransactions(true)}
+      refreshing={refreshing}
+      refreshLabel="Refresh"
+      refreshTitle="Refresh ledger"
     >
       {/* ── Controls bar ───────────────────────────────────────────────────── */}
-      <div className="mt-3 mb-3 bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 px-3 py-2.5 shadow-sm">
+      <div className="mb-3 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 px-3 py-2.5 shadow-sm">
 
         {/* Single row: [‹] [date picker] [›] · presets · | · type · view · refresh */}
         <div className="flex flex-wrap items-center gap-2">
@@ -396,7 +385,7 @@ export default function Ledger() {
           <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-gray-700 mx-0.5" />
 
           {/* Type filter */}
-          <div style={{ minWidth: 140 }}>
+          <div className="min-w-[140px] flex-1 sm:flex-none">
             <SelectField
               value={typeFilter}
               onChange={(val) => { setTypeFilter(val); goToPage(1); }}
@@ -406,29 +395,18 @@ export default function Ledger() {
             />
           </div>
 
-          {/* View toggle + Refresh — pushed to end */}
-          <div className="ml-auto flex items-center gap-2">
+          {/* View toggle */}
+          <div className="ml-auto hidden items-center justify-end gap-2 sm:flex">
             <ViewToggle viewMode={viewMode} onChange={setViewMode} />
-
-            <button
-              type="button"
-              onClick={() => fetchTransactions(true)}
-              disabled={refreshing}
-              title="Refresh ledger"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-50 whitespace-nowrap"
-            >
-              <FaSyncAlt size={11} className={refreshing ? 'animate-spin' : ''} />
-              Refresh
-            </button>
           </div>
         </div>
 
         {/* Active range hint */}
         {(dateFilter.from_date && dateFilter.to_date) && (
           <p className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500 leading-none">
-            Showing: <span className="font-medium text-slate-500 dark:text-slate-400">{formatDate(dateFilter.from_date)}</span>
+            Showing: <span className="font-medium text-slate-500 dark:text-slate-400">{formatLedgerDate(dateFilter.from_date)}</span>
             {' – '}
-            <span className="font-medium text-slate-500 dark:text-slate-400">{formatDate(dateFilter.to_date)}</span>
+            <span className="font-medium text-slate-500 dark:text-slate-400">{formatLedgerDate(dateFilter.to_date)}</span>
             {pagination.total > 0 && (
               <span className="ml-2 text-slate-300 dark:text-slate-600">
                 · {pagination.total} transaction{pagination.total !== 1 ? 's' : ''}
@@ -443,32 +421,34 @@ export default function Ledger() {
         <div className="flex justify-center items-center py-16">
           <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-emerald-500" />
         </div>
-      ) : transactions.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 py-10 text-center flex flex-col items-center">
+      ) : effectiveViewMode !== 'table' && transactions.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 py-10 text-center flex flex-col items-center">
           <ArrowRightLeft className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No transactions in this period</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Adjust the date range or clear the type filter</p>
         </div>
-      ) : viewMode === 'table' ? (
+      ) : effectiveViewMode === 'table' ? (
         <ManagementTable
           columns={tableColumns}
-          rows={transactions}
+          rows={ledgerRows}
           rowKey="transaction_id"
           accent="emerald"
+          compact
           getActions={getRowActions}
           activeId={activeMenuId}
           onToggleAction={(e, id) => setActiveMenuId(id)}
-          onRowClick={(row) => handleViewDetails(row)}
+          rowClassName={(row) => row.isOpeningBalance ? 'bg-amber-50/70 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/20' : ''}
+          onRowClick={(row) => !row.isOpeningBalance && handleViewDetails(row)}
         />
       ) : (
-        <ManagementGrid viewMode={viewMode}>
+        <ManagementGrid viewMode={effectiveViewMode}>
           {transactions.map((txn) => {
             const cfg = getTypeConfig(txn.transaction_type);
             return (
               <ManagementCard
                 key={txn.transaction_id}
                 title={txn.invoice_no}
-                subtitle={formatDate(txn.transaction_date)}
+                subtitle={formatLedgerDate(txn.transaction_date)}
                 accent="emerald"
                 icon={<Receipt size={15} />}
                 badge={
@@ -476,10 +456,23 @@ export default function Ledger() {
                     {cfg.label}
                   </span>
                 }
-                actions={getRowActions(txn)}
-                menuId={`menu-${txn.transaction_id}`}
-                activeId={activeMenuId}
-                onToggle={(e, id) => setActiveMenuId(id)}
+                headerAction={
+                  <ActionMenu
+                    menuId={`menu-${txn.transaction_id}`}
+                    activeId={activeMenuId}
+                    onToggle={(e, id) => setActiveMenuId(id)}
+                    actions={getRowActions(txn)}
+                    trigger={(
+                      <button
+                        type="button"
+                        title="Actions"
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400"
+                      >
+                        <FaEllipsisV size={12} />
+                      </button>
+                    )}
+                  />
+                }
                 onClick={() => handleViewDetails(txn)}
               >
                 <div className="mt-2 grid grid-cols-3 gap-1 text-xs border-t border-slate-100 dark:border-gray-700 pt-1.5">
@@ -536,7 +529,7 @@ export default function Ledger() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Date</p>
-                <p className="font-semibold text-slate-800 dark:text-gray-200">{formatDate(selectedItem.transaction_date)}</p>
+                <p className="font-semibold text-slate-800 dark:text-gray-200">{formatLedgerDate(selectedItem.transaction_date)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Invoice ID</p>
