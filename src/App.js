@@ -19,6 +19,7 @@ import Updates from "./pages/updates";
 import Chat from "./pages/Chat";
 import TaskDetails from "./pages/TaskDetails";
 import FirmDetails from "./pages/FirmDetails";
+import ServiceDetails from "./pages/ServiceDetails";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/service/:service_id" element={<ServiceDetails />} />
               <Route path="/tasks" element={<Task />} />
               <Route path="/tasks/ongoing" element={<Task />} />
               <Route path="/tasks/completed" element={<Task />} />

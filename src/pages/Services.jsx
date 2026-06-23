@@ -1,81 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import { Layers, Plus, MoreVertical, Edit, Trash, Eye } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Layers, Plus, Edit, Trash, Eye, Activity, Box, IndianRupee } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
 import ManagementCard from '../components/common/ManagementCard';
 import ManagementGrid from '../components/common/ManagementGrid';
-import ManagementViewSwitcher from '../components/common/ManagementViewSwitcher';
 import ManagementFilters from '../components/common/ManagementFilters';
-import Modal from '../components/common/Modal';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
-
-// Dummy Data
-const DUMMY_SERVICES = Array.from({ length: 45 }, (_, i) => ({
-  id: `srv-${i + 1}`,
-  name: `Service Name ${i + 1}`,
-  description: `This is a description for service ${i + 1}.`,
-  status: i % 3 === 0 ? 'Inactive' : 'Active',
-  category: i % 2 === 0 ? 'Consulting' : 'Development',
-  price: `$${(Math.random() * 1000).toFixed(2)}`,
-  createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toLocaleDateString(),
-}));
+import { apiCall } from '../utils/apiCall';
+import toast from 'react-hot-toast';
 
 export default function Services() {
   const [viewMode, setViewMode] = useState('table');
-  const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 10);
+  const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const navigate = useNavigate();
 
-  // New states for Filters & Modal
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [typeFilter, setTypeFilter] = useState(null);
+  
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter Data
-  const filteredData = DUMMY_SERVICES.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter ? item.status === statusFilter.value : true;
-    return matchesSearch && matchesStatus;
-  });
+  const abortControllerRef = useRef(null);
 
-  // Pagination logic
+  // Fetch Services
+  const fetchServices = async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    setIsLoading(true);
+    try {
+      const typeQuery = typeFilter ? typeFilter.value : '';
+      const endpoint = `/service/list?page_no=${pagination.page}&limit=${pagination.limit}&search=${encodeURIComponent(searchQuery)}&type=${encodeURIComponent(typeQuery)}`;
+      
+      const response = await apiCall(endpoint, 'GET', null, { signal: abortControllerRef.current.signal });
+      const data = await response.json();
+      
+      if (response.ok && data.success !== false) {
+        setServices(data.data || []);
+        if (data.pagination) {
+          updatePagination({ total: data.pagination.total });
+        }
+      } else {
+        setServices([]);
+        updatePagination({ total: 0 });
+      }
+      setIsLoading(false);
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      console.error('Failed to fetch services:', error);
+      toast.error('Failed to load services');
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    updatePagination({ total: filteredData.length });
-  }, [filteredData.length, updatePagination]);
+    const timer = setTimeout(() => {
+      fetchServices();
+    }, 300);
 
-  const startIndex = (pagination.page - 1) * pagination.limit;
-  const currentData = filteredData.slice(startIndex, startIndex + pagination.limit);
+    return () => {
+      clearTimeout(timer);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, pagination.limit, searchQuery, typeFilter]);
 
   const handleRefresh = () => {
-    console.log('Refreshing services...');
+    fetchServices();
   };
 
   const handleViewDetails = (item) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    navigate(`/service/${item.service_id}`);
+  };
+
+  const formatType = (typeStr) => {
+    if (!typeStr) return '-';
+    return typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
   };
 
   const tableColumns = [
-    { key: 'name', label: 'Service Name', render: (row) => <span className="font-medium text-slate-900 dark:text-white">{row.name}</span> },
-    { key: 'category', label: 'Category' },
-    { key: 'price', label: 'Price' },
+    { key: 'name', label: 'Service Name', render: (row) => <span className="font-bold text-blue-900 dark:text-blue-200">{row.name}</span> },
+    { key: 'sac_code', label: 'SAC Code', render: (row) => <span>{row.sac_code || '-'}</span> },
     { 
-      key: 'status', 
-      label: 'Status', 
+      key: 'type', 
+      label: 'Type', 
       render: (row) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${row.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
-          {row.status}
+        <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${row.type === 'compliance' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+          {formatType(row.type)}
         </span>
       )
     },
-    { key: 'createdAt', label: 'Created At' },
+    { 
+      key: 'charges', 
+      label: 'Total Charges', 
+      render: (row) => (
+        <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-0.5">
+          <IndianRupee size={12} />
+          {row.charges?.total || 0}
+        </span>
+      )
+    },
   ];
 
   const getRowActions = (row) => [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
-    { id: 'edit', label: 'Edit Service', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.id) },
-    { id: 'delete', label: 'Delete', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.id) },
+    { id: 'edit', label: 'Edit Service', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.service_id) },
+    { id: 'delete', label: 'Remove Service', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.service_id) },
   ];
 
   return (
@@ -86,7 +122,7 @@ export default function Services() {
       accent="blue"
       onRefresh={handleRefresh}
       actions={
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-lg transition-all shadow-md shadow-blue-600/20">
           <Plus size={16} />
           <span>Add Service</span>
         </button>
@@ -99,27 +135,36 @@ export default function Services() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={(val) => { setSearchQuery(val); goToPage(1); }}
           searchPlaceholder="Search services..."
           filters={[
             {
-              value: statusFilter,
-              onChange: setStatusFilter,
+              value: typeFilter,
+              onChange: (val) => { setTypeFilter(val); goToPage(1); },
               options: [
-                { value: 'Active', label: 'Active' },
-                { value: 'Inactive', label: 'Inactive' }
+                { value: 'compliance', label: 'Compliance' },
+                { value: 'general', label: 'General' }
               ],
-              placeholder: 'Filter by Status',
+              placeholder: 'Type',
               isClearable: true
             }
           ]}
         />
 
-        {viewMode === 'table' ? (
+        {isLoading ? (
+          <div className="flex justify-center p-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          </div>
+        ) : services.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
+            <Box className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
+            <p className="text-slate-500 dark:text-slate-400 font-medium">No services found</p>
+          </div>
+        ) : viewMode === 'table' ? (
           <ManagementTable
             columns={tableColumns}
-            rows={currentData}
-            rowKey="id"
+            rows={services}
+            rowKey="service_id"
             accent="blue"
             getActions={getRowActions}
             activeId={activeMenuId}
@@ -128,30 +173,29 @@ export default function Services() {
           />
         ) : (
           <ManagementGrid viewMode={viewMode}>
-            {currentData.map((service) => (
+            {services.map((service) => (
               <ManagementCard
-                key={service.id}
+                key={service.service_id}
                 title={service.name}
-                subtitle={service.category}
+                subtitle={`SAC: ${service.sac_code || 'N/A'}`}
                 accent="blue"
                 icon={<Layers size={16} />}
                 badge={
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${service.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
-                    {service.status}
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${service.type === 'compliance' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+                    {formatType(service.type)}
                   </span>
                 }
                 actions={getRowActions(service)}
-                menuId={`menu-${service.id}`}
+                menuId={`menu-${service.service_id}`}
                 activeId={activeMenuId}
                 onToggle={(e, id) => setActiveMenuId(id)}
                 onClick={() => handleViewDetails(service)}
               >
-                <div className="mt-2 text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                  {service.description}
-                </div>
-                <div className="mt-3 flex justify-between items-center text-xs font-medium">
-                  <span className="text-slate-500">Price: <span className="text-slate-900 dark:text-slate-200">{service.price}</span></span>
-                  <span className="text-slate-400">{service.createdAt}</span>
+                <div className="mt-3 flex justify-between items-center text-xs border-t border-slate-100 dark:border-gray-700 pt-2">
+                  <span className="text-slate-500 flex items-center gap-1 font-medium">Charges:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-0.5">
+                    <IndianRupee size={12} />{service.charges?.total || 0}
+                  </span>
                 </div>
               </ManagementCard>
             ))}
@@ -166,50 +210,6 @@ export default function Services() {
           onLimitChange={changeLimit}
         />
       </div>
-
-      {/* View Details Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Service Details"
-        icon={Layers}
-        size="md"
-        confirmText="Edit Service"
-        onConfirm={() => console.log('Edit from modal', selectedItem?.id)}
-      >
-        {selectedItem && (
-          <div className="space-y-4 text-sm">
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Name:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.name}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Category:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.category}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span> 
-              <p className="mt-1">
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedItem.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
-                  {selectedItem.status}
-                </span>
-              </p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Price:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.price}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Description:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.description}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Created At:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.createdAt}</p>
-            </div>
-          </div>
-        )}
-      </Modal>
 
     </ManagementHub>
   );
