@@ -16,7 +16,6 @@ import Profile from "./pages/Profile";
 import Firms from "./pages/Firms";
 import Ledger from "./pages/Ledger";
 import Updates from "./pages/updates";
-import Chat from "./pages/Chat";
 import TaskDetails from "./pages/TaskDetails";
 import FirmDetails from "./pages/FirmDetails";
 import ServiceDetails from "./pages/ServiceDetails";
@@ -52,7 +51,6 @@ function App() {
               <Route path="/firm/:firm_id" element={<FirmDetails />} />
               <Route path="/ledger" element={<Ledger />} />
                 <Route path="/updates" element={<Updates />} />
-                <Route path="/chat" element={<Chat />} />
               </Route>
             </Route>
 
