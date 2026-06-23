@@ -494,8 +494,18 @@ export default function Ledger() {
         title="Transaction Details"
         icon={Receipt}
         size="md"
-        confirmText="Close"
-        onConfirm={() => setIsModalOpen(false)}
+        footer={
+          selectedItem?.invoice_id ? (
+            <button
+              type="button"
+              onClick={() => downloadInvoice(selectedItem)}
+              className="flex items-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 shadow-sm transition-colors text-sm"
+            >
+              <Download size={15} />
+              Download Invoice PDF
+            </button>
+          ) : null
+        }
       >
         {selectedItem && (
           <div className="space-y-3 text-sm text-slate-700 dark:text-gray-300">
@@ -537,18 +547,7 @@ export default function Ledger() {
               ))}
             </div>
 
-            {selectedItem.invoice_id && (
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => downloadInvoice(selectedItem)}
-                  className="w-full flex items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 shadow-sm transition-colors text-sm"
-                >
-                  <Download size={15} />
-                  Download Invoice PDF
-                </button>
-              </div>
-            )}
+
           </div>
         )}
       </Modal>
