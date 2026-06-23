@@ -11,14 +11,14 @@ import { formatDate } from '../utils/helpers';
 const DUMMY_UPDATES = Array.from({ length: 50 }, (_, i) => {
   const severities = ['Success', 'Info', 'Warning', 'Action Required'];
   const severity = severities[i % severities.length];
-  
+
   const tasksRef = `tsk-${(i % 12) + 1}`;
   const firmName = `Global Firm ${(i % 10) + 1}`;
-  
+
   let title = '';
   let message = '';
   let documentName = null;
-  
+
   if (severity === 'Success') {
     title = ['GSTR-1 GST Return Submitted', 'Income Tax Return (ITR-6) Filed', 'Aadhaar-PAN Verification Complete', 'Tax Audit Report Issued'][i % 4];
     message = [
@@ -76,19 +76,19 @@ export default function Updates() {
   const [severityFilter, setSeverityFilter] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  
+
   // File upload state simulation
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
 
   // Filter Data
   const filteredData = DUMMY_UPDATES.filter(item => {
-    const matchesSearch = 
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch =
+      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.firmName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.message.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesSeverity = severityFilter ? item.severity === severityFilter.value : true;
     return matchesSearch && matchesSeverity;
   });
@@ -197,10 +197,10 @@ export default function Updates() {
                   <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-gray-900 ring-4 ${styles.indicator} transition-all duration-300 group-hover:scale-110`} />
 
                   {/* Card Container */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-150 dark:border-gray-700/60 p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="bg-white dark:bg-gray-800 rounded-md border border-slate-150 dark:border-gray-700/60 p-4 shadow-sm hover:shadow-md transition-all duration-200">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${styles.badge}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider ${styles.badge}`}>
                           {log.severity}
                         </span>
                         <span className="text-xs font-semibold text-slate-400 dark:text-gray-500">
@@ -237,7 +237,7 @@ export default function Updates() {
                         </span>
                         <button
                           onClick={() => handleOpenDetails(log)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-slate-700 dark:text-gray-200 font-semibold transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md text-slate-700 dark:text-gray-200 font-semibold transition-colors"
                         >
                           <Eye size={12} />
                           <span>Audit Log</span>
@@ -250,7 +250,7 @@ export default function Updates() {
             })}
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-8 text-center text-slate-400">
+          <div className="bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 p-8 text-center text-slate-400">
             No process logs found matching search criteria.
           </div>
         )}
@@ -287,7 +287,7 @@ export default function Updates() {
             <div className="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
               <div>
                 <span className="text-[10px] text-slate-400 uppercase block tracking-wider">Severity</span>
-                <span className={`inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] uppercase font-bold ${getSeverityStyles(selectedItem.severity).badge}`}>
+                <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-md text-[10px] uppercase font-bold ${getSeverityStyles(selectedItem.severity).badge}`}>
                   {selectedItem.severity}
                 </span>
               </div>
@@ -300,7 +300,7 @@ export default function Updates() {
             {/* Message */}
             <div>
               <span className="text-[10px] text-slate-400 uppercase block tracking-wider">Process Details</span>
-              <p className="bg-slate-50 dark:bg-gray-900/60 p-3 rounded-lg border border-slate-100 dark:border-gray-800 text-xs leading-relaxed mt-1">
+              <p className="bg-slate-50 dark:bg-gray-900/60 p-3 rounded-md border border-slate-100 dark:border-gray-800 text-xs leading-relaxed mt-1">
                 {selectedItem.message}
               </p>
             </div>
@@ -320,24 +320,24 @@ export default function Updates() {
             {/* Document Attachments / Interactive Upload Mock */}
             <div className="border-t border-slate-200 dark:border-gray-700 pt-3">
               <span className="text-[10px] text-slate-400 uppercase block tracking-wider mb-2">Audit Attachments</span>
-              
+
               {selectedItem.severity === 'Action Required' && !uploadedFileUrl ? (
-                <div className="p-4 border-2 border-dashed border-red-300 dark:border-red-900/60 bg-red-50/20 dark:bg-red-950/5 rounded-xl text-center">
+                <div className="p-4 border-2 border-dashed border-red-300 dark:border-red-900/60 bg-red-50/20 dark:bg-red-950/5 rounded-md text-center">
                   <AlertCircle className="w-8 h-8 mx-auto text-red-500 mb-2" />
                   <p className="text-xs font-bold text-slate-800 dark:text-gray-200">Compliance Document Required</p>
                   <p className="text-[10px] text-slate-400 dark:text-gray-500 mt-1 mb-3">Please upload the requested statement in PDF format (Max 5MB)</p>
-                  
+
                   <button
                     onClick={handleSimulateUpload}
                     disabled={uploadingFile}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-750 text-white rounded-lg text-xs font-bold transition-all shadow-sm shadow-red-500/10 active:scale-95 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-750 text-white rounded-md text-xs font-bold transition-all shadow-sm shadow-red-500/10 active:scale-95 disabled:opacity-50"
                   >
                     <Upload size={12} className={uploadingFile ? "animate-bounce" : ""} />
                     <span>{uploadingFile ? "Uploading File..." : "Simulate File Upload"}</span>
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-gray-900/60 rounded-xl border border-slate-100 dark:border-gray-800">
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-gray-900/60 rounded-md border border-slate-100 dark:border-gray-800">
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
                     <span className="text-xs font-semibold text-slate-805 dark:text-gray-200 truncate">

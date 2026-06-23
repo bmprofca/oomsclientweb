@@ -53,16 +53,28 @@ export default function ManagementTable({
 
   const allVisibleColumns = columns.filter((column) => column.visible !== false);
 
+  const serialNoColumn = {
+    key: '__serialNo__',
+    label: 'SN',
+    headerClassName: 'w-14',
+    className: 'w-14 text-center',
+    render: (_, index) => (
+      <span className="font-semibold text-gray-500 dark:text-gray-400">{index + 1}</span>
+    ),
+  };
+
+  const enhancedColumns = [serialNoColumn, ...allVisibleColumns];
+
   const getResponsiveColumns = () => {
-    let maxCols = allVisibleColumns.length;
+    let maxCols = enhancedColumns.length;
     if (containerWidth < 340) maxCols = 1;
     else if (containerWidth < 480) maxCols = 2;
     else if (containerWidth < 640) maxCols = 3;
     else if (containerWidth < 768) maxCols = 4;
     else if (containerWidth < 1024) maxCols = 5;
     else if (containerWidth < 1280) maxCols = 6;
-    
-    return allVisibleColumns.slice(0, maxCols);
+
+    return enhancedColumns.slice(0, maxCols);
   };
 
   const visibleColumns = getResponsiveColumns();
@@ -88,7 +100,7 @@ export default function ManagementTable({
       ref={containerRef}
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      className={joinClasses('overflow-hidden rounded-xl bg-white dark:bg-gray-800 w-full', cardClass, containerClassName, className)}
+      className={joinClasses('overflow-hidden rounded-md bg-white dark:bg-gray-800 w-full', cardClass, containerClassName, className)}
     >
       <div className={joinClasses('w-full', tableClassName)}>
         <table className="w-full table-fixed text-left text-sm text-gray-700 dark:text-gray-300">

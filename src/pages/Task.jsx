@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckSquare, Plus, Edit, Trash, Clock, Eye, List, Activity, CheckCircle, Upload, IndianRupee } from 'lucide-react';
+import { CheckSquare, Clock, Eye, List, Activity, CheckCircle, Upload, IndianRupee } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
@@ -119,10 +119,8 @@ export default function Task() {
   ];
 
   const getRowActions = (row) => [
-    { id: 'view',   label: 'View Details',       icon: <Eye size={14} />,    color: 'green',  onClick: () => handleViewDetails(row) },
-    { id: 'upload', label: 'Upload Documents',    icon: <Upload size={14} />, color: 'indigo', onClick: () => navigate(`/tasks/${row.task_id}/documents`) },
-    { id: 'edit',   label: 'Edit Task',           icon: <Edit size={14} />,   color: 'blue',   onClick: () => console.log('Edit', row.task_id) },
-    { id: 'delete', label: 'Delete',              icon: <Trash size={14} />,  danger: true,    onClick: () => console.log('Delete', row.task_id) },
+    { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
+    { id: 'upload', label: 'Upload Documents', icon: <Upload size={14} />, color: 'indigo', onClick: () => navigate(`/tasks/${row.task_id}/documents`) },
   ];
 
   return (
@@ -135,12 +133,7 @@ export default function Task() {
       activeTab={activeTab}
       onTabChange={handleTabChange}
       onRefresh={fetchTasks}
-      actions={
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-amber-600/20">
-          <Plus size={16} />
-          <span>New Task</span>
-        </button>
-      }
+      actions={null}
       summary={null}
     >
       <div className="mt-4 flex flex-col gap-4">
@@ -170,7 +163,7 @@ export default function Task() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
           </div>
         ) : tasks.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
             <List className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
             <p className="text-slate-500 dark:text-slate-400 font-medium">No tasks found</p>
           </div>
@@ -195,7 +188,7 @@ export default function Task() {
                 accent="amber"
                 icon={<CheckSquare size={16} />}
                 badge={
-                  <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusColor(task.status)}`}>
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold ${getStatusColor(task.status)}`}>
                     {task.status || 'UNKNOWN'}
                   </span>
                 }

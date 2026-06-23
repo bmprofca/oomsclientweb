@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Building2, Wrench, IndianRupee,
-  CalendarDays, Clock, Edit, FileText, Tag, MapPin, Map,
+  CalendarDays, Clock, FileText, Tag, MapPin, Map,
   User, CheckCircle, XCircle, AlertCircle, Loader2
 } from 'lucide-react';
 import { apiCall } from '../utils/apiCall';
@@ -24,20 +24,20 @@ const firmTypeLabel = (type) => {
 const StatusBadge = ({ status }) => {
   if (status === true) {
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800">
+      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800">
         <CheckCircle size={12} className="mr-1" /> Active
       </span>
     );
   }
   if (status === false) {
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-900/30 dark:border-rose-800">
+      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-900/30 dark:border-rose-800">
         <XCircle size={12} className="mr-1" /> Inactive
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-slate-700 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-slate-700 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700">
       Unknown
     </span>
   );
@@ -65,7 +65,7 @@ const Section = ({ title, icon: Icon, accent = 'indigo', children }) => {
     slate: 'border-slate-400 text-slate-500 dark:text-slate-400',
   };
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
       <div className={`flex items-center gap-2 px-5 py-3.5 border-b-2 ${accents[accent]} border-opacity-60 bg-slate-50/60 dark:bg-slate-800/40`}>
         {Icon && <Icon size={15} className={accents[accent].split(' ')[1]} />}
         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight">{title}</h3>
@@ -128,7 +128,7 @@ export default function FirmDetails() {
         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{error || 'Firm not found'}</p>
         <button
           onClick={() => navigate('/firms')}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md transition-colors"
         >
           <ArrowLeft size={15} />
           Back to Firms
@@ -147,7 +147,7 @@ export default function FirmDetails() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
           >
             <ArrowLeft size={16} />
           </button>
@@ -159,21 +159,10 @@ export default function FirmDetails() {
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{firm.firm_id}</p>
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => console.log('Edit firm', firm_id)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-indigo-600/20"
-          >
-            <Edit size={14} />
-            Edit Firm
-          </button>
-        </div>
       </div>
 
       {/* ── Status strip ── */}
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</span>
           <StatusBadge status={firm.status} />
@@ -181,7 +170,7 @@ export default function FirmDetails() {
         <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-indigo-700 bg-indigo-50 border-indigo-200 dark:text-indigo-400 dark:bg-indigo-900/30 dark:border-indigo-800">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-indigo-700 bg-indigo-50 border-indigo-200 dark:text-indigo-400 dark:bg-indigo-900/30 dark:border-indigo-800">
             {firmTypeLabel(firm.firm_type)}
           </span>
         </div>
@@ -231,19 +220,19 @@ export default function FirmDetails() {
           {/* Audit */}
           <Section title="Audit Details" icon={Clock} accent="slate">
             {audit?.create_by && (
-              <InfoRow 
-                label="Created By" 
-                value={`${audit.create_by.name || ''} (${audit.create_by.mobile || ''})`} 
-                icon={User} 
+              <InfoRow
+                label="Created By"
+                value={`${audit.create_by.name || ''} (${audit.create_by.mobile || ''})`}
+                icon={User}
               />
             )}
             <InfoRow label="Created On" value={formatDateTime(audit?.create_date)} icon={Clock} />
-            
+
             {audit?.modify_by && (
-              <InfoRow 
-                label="Last Modified By" 
-                value={`${audit.modify_by.name || ''} (${audit.modify_by.mobile || ''})`} 
-                icon={User} 
+              <InfoRow
+                label="Last Modified By"
+                value={`${audit.modify_by.name || ''} (${audit.modify_by.mobile || ''})`}
+                icon={User}
               />
             )}
             <InfoRow label="Last Modified On" value={formatDateTime(audit?.modify_date)} icon={Clock} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Edit, Trash, Eye, Activity, Building } from 'lucide-react';
+import { Building2, Eye, Activity, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
@@ -18,7 +18,7 @@ export default function Firms() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
-  
+
   const [firms, setFirms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,10 +34,10 @@ export default function Firms() {
       }
 
       const endpoint = `/firm/list?page_no=${pagination.page}&limit=${pagination.limit}&status=${statusQuery}&search=${encodeURIComponent(searchQuery)}`;
-      
+
       const response = await apiCall(endpoint, 'GET');
       const data = await response.json();
-      
+
       if (response.ok && data.success !== false) {
         setFirms(data.data || []);
         if (data.pagination) {
@@ -81,9 +81,9 @@ export default function Firms() {
   const tableColumns = [
     { key: 'firm_name', label: 'Firm Name', render: (row) => <span className="font-bold text-indigo-900 dark:text-indigo-200">{row.firm_name}</span> },
     { key: 'firm_type', label: 'Type', render: (row) => <span>{formatType(row.firm_type)}</span> },
-    { 
-      key: 'status', 
-      label: 'Status', 
+    {
+      key: 'status',
+      label: 'Status',
       render: (row) => (
         <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${row.status ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
           {row.status ? 'Active' : 'Inactive'}
@@ -94,8 +94,6 @@ export default function Firms() {
 
   const getRowActions = (row) => [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
-    { id: 'edit', label: 'Edit Firm Details', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.firm_id) },
-    { id: 'delete', label: 'Remove Firm', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.firm_id) },
   ];
 
   return (
@@ -105,17 +103,12 @@ export default function Firms() {
       description="Manage partner firms, client organizations, and their details."
       accent="indigo"
       onRefresh={handleRefresh}
-      actions={
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-sm font-medium rounded-lg transition-all shadow-md shadow-indigo-600/20">
-          <Plus size={16} />
-          <span>Register Firm</span>
-        </button>
-      }
+      actions={null}
       summary={null}
     >
       <div className="mt-4 flex flex-col gap-4">
-        
-        <ManagementFilters 
+
+        <ManagementFilters
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           searchValue={searchQuery}
@@ -140,7 +133,7 @@ export default function Firms() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
           </div>
         ) : firms.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
             <Building className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
             <p className="text-slate-500 dark:text-slate-400 font-medium">No firms found</p>
           </div>
@@ -176,7 +169,7 @@ export default function Firms() {
                 onClick={() => handleViewDetails(firm)}
               >
                 <div className="mt-3 flex justify-between items-center text-xs border-t border-slate-100 dark:border-gray-700 pt-2">
-                  <span className="text-slate-500 flex items-center gap-1"><Activity size={12}/> Profile: {firm.status ? 'Active' : 'Disabled'}</span>
+                  <span className="text-slate-500 flex items-center gap-1"><Activity size={12} /> Profile: {firm.status ? 'Active' : 'Disabled'}</span>
                 </div>
               </ManagementCard>
             ))}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layers, Plus, Edit, Trash, Eye, Activity, Box, IndianRupee } from 'lucide-react';
+import { Layers, Eye, Activity, Box, IndianRupee } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
@@ -18,7 +18,7 @@ export default function Services() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState(null);
-  
+
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,10 +35,10 @@ export default function Services() {
     try {
       const typeQuery = typeFilter ? typeFilter.value : '';
       const endpoint = `/service/list?page_no=${pagination.page}&limit=${pagination.limit}&search=${encodeURIComponent(searchQuery)}&type=${encodeURIComponent(typeQuery)}`;
-      
+
       const response = await apiCall(endpoint, 'GET', null, { signal: abortControllerRef.current.signal });
       const data = await response.json();
-      
+
       if (response.ok && data.success !== false) {
         setServices(data.data || []);
         if (data.pagination) {
@@ -87,18 +87,18 @@ export default function Services() {
   const tableColumns = [
     { key: 'name', label: 'Service Name', render: (row) => <span className="font-bold text-blue-900 dark:text-blue-200">{row.name}</span> },
     { key: 'sac_code', label: 'SAC Code', render: (row) => <span>{row.sac_code || '-'}</span> },
-    { 
-      key: 'type', 
-      label: 'Type', 
+    {
+      key: 'type',
+      label: 'Type',
       render: (row) => (
         <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${row.type === 'compliance' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
           {formatType(row.type)}
         </span>
       )
     },
-    { 
-      key: 'charges', 
-      label: 'Total Charges', 
+    {
+      key: 'charges',
+      label: 'Total Charges',
       render: (row) => (
         <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-0.5">
           <IndianRupee size={12} />
@@ -110,8 +110,6 @@ export default function Services() {
 
   const getRowActions = (row) => [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
-    { id: 'edit', label: 'Edit Service', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.service_id) },
-    { id: 'delete', label: 'Remove Service', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.service_id) },
   ];
 
   return (
@@ -121,17 +119,12 @@ export default function Services() {
       description="Manage all your available services, pricing, and categories."
       accent="blue"
       onRefresh={handleRefresh}
-      actions={
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-lg transition-all shadow-md shadow-blue-600/20">
-          <Plus size={16} />
-          <span>Add Service</span>
-        </button>
-      }
+      actions={null}
       summary={null}
     >
       <div className="mt-4 flex flex-col gap-4">
-        
-        <ManagementFilters 
+
+        <ManagementFilters
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           searchValue={searchQuery}
@@ -156,7 +149,7 @@ export default function Services() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
           </div>
         ) : services.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
             <Box className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
             <p className="text-slate-500 dark:text-slate-400 font-medium">No services found</p>
           </div>

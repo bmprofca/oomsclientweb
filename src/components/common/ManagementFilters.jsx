@@ -13,11 +13,11 @@ export default function ManagementFilters({
   className = '',
 }) {
   return (
-    <div className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-gray-700 flex flex-col md:flex-row gap-3 md:items-center justify-between shadow-sm ${className}`}>
-      
+    <div className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-md border border-slate-200 dark:border-gray-700 flex flex-col md:flex-row gap-3 md:items-center justify-between shadow-sm ${className}`}>
+
       {/* Search and Filters Container */}
       <div className="flex flex-col sm:flex-row flex-1 gap-3 w-full md:w-auto">
-        
+
         {/* Search Input */}
         {(onSearchChange !== undefined || searchValue !== undefined) && (
           <div className="relative w-full sm:max-w-xs md:max-w-sm">
@@ -29,7 +29,7 @@ export default function ManagementFilters({
               value={searchValue}
               onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200 text-sm rounded-lg pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200 text-sm rounded-md pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
             />
           </div>
         )}
@@ -38,7 +38,7 @@ export default function ManagementFilters({
         {filters.length > 0 && (
           <div className="flex flex-wrap gap-2 sm:gap-3 flex-1">
             {filters.map((filter, index) => (
-              <div key={index} className="w-full sm:w-auto min-w-[140px]">
+              <div key={index} className="w-full sm:w-auto min-w-[140px] rounded-md">
                 <SelectField
                   value={filter.value}
                   onChange={filter.onChange}

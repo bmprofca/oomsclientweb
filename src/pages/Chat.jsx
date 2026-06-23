@@ -64,10 +64,10 @@ export default function Chat() {
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      
+
       // Determine reply based on query matching or fallback
       let agentReply = "I've noted your question. Let me fetch your compliance logs so we can review the exact invoices. I will update you here shortly.";
-      
+
       const textLower = text.toLowerCase();
       if (textLower.includes('itr') || textLower.includes('deadline')) {
         agentReply = "Corporate ITR filings (ITR-6) are due on Oct 31, 2026. We need to submit the CA Audit Report (Form 3CB) by Sept 30. Your audit is currently in progress.";
@@ -120,13 +120,13 @@ export default function Chat() {
       accent="blue"
     >
       <div className="flex flex-col lg:flex-row gap-6 mt-4 min-h-[calc(100vh-280px)]">
-        
+
         {/* Left Side: Advisor Profile Info */}
         <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
           {/* Main Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-5 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 p-5 shadow-sm">
             <div className="text-center pb-4 border-b border-slate-100 dark:border-gray-700">
-              <div className="relative w-20 h-20 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg shadow-blue-500/20">
+              <div className="relative w-20 h-20 mx-auto mb-3 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg shadow-blue-500/20">
                 SK
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-4 border-white dark:border-gray-800 rounded-full" />
               </div>
@@ -164,18 +164,18 @@ export default function Chat() {
           </div>
 
           {/* Secure disclaimer info */}
-          <div className="bg-slate-50 dark:bg-gray-800/40 p-4 rounded-xl border border-slate-100 dark:border-gray-800/50 flex gap-3 text-xs text-slate-500 dark:text-gray-400">
+          <div className="bg-slate-50 dark:bg-gray-800/40 p-4 rounded-md border border-slate-100 dark:border-gray-800/50 flex gap-3 text-xs text-slate-500 dark:text-gray-400">
             <Zap size={20} className="text-blue-500 shrink-0" />
             <p className="leading-relaxed">All chats are secured using end-to-end TLS encryption. Advice is based on records uploaded in the Firms section.</p>
           </div>
         </div>
 
         {/* Right Side: Interactive Chat Panel */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div className="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 overflow-hidden shadow-sm">
           {/* Header */}
           <div className="px-5 py-4 bg-gray-50/80 dark:bg-gray-850/60 border-b border-slate-150 dark:border-gray-700 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-md bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                 <MessageSquare size={16} />
               </div>
               <div>
@@ -201,17 +201,16 @@ export default function Chat() {
                   className={`flex items-end gap-2.5 max-w-[85%] ${isAgent ? 'mr-auto' : 'ml-auto flex-row-reverse'}`}
                 >
                   {/* Avatar wrapper */}
-                  <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm ${isAgent ? 'bg-indigo-600' : 'bg-slate-700'}`}>
+                  <div className={`w-8 h-8 rounded-md shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm ${isAgent ? 'bg-indigo-600' : 'bg-slate-700'}`}>
                     {isAgent ? 'CA' : <User size={14} />}
                   </div>
 
                   {/* Message body */}
                   <div className="flex flex-col">
-                    <div className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
-                      isAgent 
-                        ? 'bg-white dark:bg-gray-750 text-slate-700 dark:text-gray-250 rounded-bl-none border border-slate-150 dark:border-gray-700/60 shadow-sm'
-                        : 'bg-indigo-600 text-white rounded-br-none shadow-md shadow-indigo-500/10'
-                    }`}>
+                    <div className={`p-3.5 rounded-md text-xs leading-relaxed ${isAgent
+                      ? 'bg-white dark:bg-gray-750 text-slate-700 dark:text-gray-250 rounded-bl-none border border-slate-150 dark:border-gray-700/60 shadow-sm'
+                      : 'bg-indigo-600 text-white rounded-br-none shadow-md shadow-indigo-500/10'
+                      }`}>
                       {msg.text}
                     </div>
                     <span className={`text-[9px] text-slate-400 dark:text-gray-500 mt-1 ${isAgent ? 'text-left' : 'text-right'}`}>
@@ -225,10 +224,10 @@ export default function Chat() {
             {/* Agent Typing Indicator */}
             {isTyping && (
               <div className="flex items-end gap-2.5 max-w-[80%] mr-auto">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                <div className="w-8 h-8 rounded-md bg-indigo-600 shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm">
                   CA
                 </div>
-                <div className="p-3 bg-white dark:bg-gray-750 rounded-2xl rounded-bl-none border border-slate-150 dark:border-gray-700/60 shadow-sm flex items-center gap-1.5 py-4">
+                <div className="p-3 bg-white dark:bg-gray-750 rounded-md rounded-bl-none border border-slate-150 dark:border-gray-700/60 shadow-sm flex items-center gap-1.5 py-4">
                   <div className="w-1.5 h-1.5 bg-slate-400 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <div className="w-1.5 h-1.5 bg-slate-400 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                   <div className="w-1.5 h-1.5 bg-slate-400 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -251,7 +250,7 @@ export default function Chat() {
                   type="button"
                   onClick={() => handleQuickQuestionClick(q)}
                   disabled={isTyping}
-                  className="px-3 py-1.5 bg-white hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-650 text-slate-650 dark:text-gray-200 border border-slate-200 dark:border-gray-600 rounded-xl text-xs font-semibold shadow-sm transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 bg-white hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-650 text-slate-650 dark:text-gray-200 border border-slate-200 dark:border-gray-600 rounded-md text-xs font-semibold shadow-sm transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {q.text}
                 </button>
@@ -260,7 +259,7 @@ export default function Chat() {
           </div>
 
           {/* Message input */}
-          <form 
+          <form
             onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputValue); }}
             className="p-4 border-t border-slate-150 dark:border-gray-700 flex gap-2 items-center bg-white dark:bg-gray-800"
           >
@@ -270,12 +269,12 @@ export default function Chat() {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Ask CA Suresh a question..."
               disabled={isTyping}
-              className="flex-1 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200 text-xs sm:text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200 text-xs sm:text-sm rounded-md px-4 py-3 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               type="submit"
               disabled={!inputValue.trim() || isTyping}
-              className="w-10 h-10 shrink-0 bg-indigo-600 hover:bg-indigo-750 disabled:bg-slate-200 dark:disabled:bg-gray-700 text-white rounded-xl flex items-center justify-center transition-all shadow-md shadow-indigo-600/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-10 h-10 shrink-0 bg-indigo-600 hover:bg-indigo-750 disabled:bg-slate-200 dark:disabled:bg-gray-700 text-white rounded-md flex items-center justify-center transition-all shadow-md shadow-indigo-600/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send size={15} />
             </button>

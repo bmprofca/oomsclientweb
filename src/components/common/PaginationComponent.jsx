@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    FaChevronLeft, 
-    FaChevronRight, 
-    FaAngleDoubleLeft, 
+import {
+    FaChevronLeft,
+    FaChevronRight,
+    FaAngleDoubleLeft,
     FaAngleDoubleRight,
-    FaLevelDownAlt 
+    FaLevelDownAlt
 } from 'react-icons/fa';
 import SelectField from './SelectField';
 
@@ -22,7 +22,7 @@ const Pagination = ({
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-    
+
     const [jumpPage, setJumpPage] = useState('');
 
     useEffect(() => {
@@ -72,7 +72,7 @@ const Pagination = ({
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`w-full lg:flex lg:justify-between lg:items-center bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 mt-6 p-3 sm:p-4 ${className}`.trim()}
+            className={`w-full lg:flex lg:justify-between lg:items-center bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 mt-6 p-3 sm:p-4 ${className}`.trim()}
         >
             {/* ── ROW 1 (mobile): Info + Page controls side by side ── */}
             <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
@@ -92,7 +92,7 @@ const Pagination = ({
                     <button
                         onClick={() => onPageChange(1)}
                         disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-md border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         title="First Page"
                     >
                         <FaAngleDoubleLeft size={11} />
@@ -101,7 +101,7 @@ const Pagination = ({
                     <button
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-md border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         title="Previous Page"
                     >
                         <FaChevronLeft size={11} />
@@ -116,7 +116,7 @@ const Pagination = ({
                                     key={page}
                                     onClick={() => onPageChange(page)}
                                     className={`
-                                        min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg text-xs sm:text-sm font-bold transition-all
+                                        min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-md text-xs sm:text-sm font-bold transition-all
                                         ${currentPage === page
                                             ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 dark:shadow-indigo-900/50'
                                             : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400'
@@ -132,7 +132,7 @@ const Pagination = ({
                     <button
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-md border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         title="Next Page"
                     >
                         <FaChevronRight size={11} />
@@ -141,7 +141,7 @@ const Pagination = ({
                     <button
                         onClick={() => onPageChange(totalPages)}
                         disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-md border border-slate-100 dark:border-gray-700 text-slate-400 dark:text-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         title="Last Page"
                     >
                         <FaAngleDoubleRight size={11} />
@@ -179,7 +179,7 @@ const Pagination = ({
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 setJumpPage(val);
                             }}
-                            className="w-14 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg px-2 py-1 pr-7 text-xs font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
+                            className="w-14 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-md px-2 py-1 pr-7 text-xs font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
                         />
                         <button
                             type="submit"
@@ -219,7 +219,7 @@ const Pagination = ({
                                 setJumpPage(val);
                             }}
                             placeholder="Page No"
-                            className="w-full bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg px-3 py-1.5 pr-10 text-sm font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
+                            className="w-full bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-md px-3 py-1.5 pr-10 text-sm font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
                         />
                         <button
                             type="submit"

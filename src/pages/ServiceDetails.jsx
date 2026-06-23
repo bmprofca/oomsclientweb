@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Layers, IndianRupee, Clock, Edit, FileText, Tag,
+  ArrowLeft, Layers, IndianRupee, Clock, FileText, Tag,
   AlertCircle, Loader2, Wrench, Globe, CalendarDays, CheckCircle, XCircle
 } from 'lucide-react';
 import { apiCall } from '../utils/apiCall';
@@ -17,13 +17,13 @@ const formatType = (typeStr) => {
 const BooleanBadge = ({ value, label }) => {
   if (value) {
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800">
+      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800">
         <CheckCircle size={12} className="mr-1" /> Yes
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-900/30 dark:border-slate-800">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-900/30 dark:border-slate-800">
       <XCircle size={12} className="mr-1" /> No
     </span>
   );
@@ -58,7 +58,7 @@ const Section = ({ title, icon: Icon, accent = 'blue', children }) => {
     slate: 'border-slate-400 text-slate-500 dark:text-slate-400',
   };
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
       <div className={`flex items-center gap-2 px-5 py-3.5 border-b-2 ${accents[accent]} border-opacity-60 bg-slate-50/60 dark:bg-slate-800/40`}>
         {Icon && <Icon size={15} className={accents[accent].split(' ')[1]} />}
         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight">{title}</h3>
@@ -135,7 +135,7 @@ export default function ServiceDetails() {
         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{error || 'Service not found'}</p>
         <button
           onClick={() => navigate('/services')}
-          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
         >
           <ArrowLeft size={15} />
           Back to Services
@@ -154,7 +154,7 @@ export default function ServiceDetails() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
           >
             <ArrowLeft size={16} />
           </button>
@@ -166,31 +166,20 @@ export default function ServiceDetails() {
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{serviceDetails.service_id}</p>
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => console.log('Edit service', service_id)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/20"
-          >
-            <Edit size={14} />
-            Edit Service
-          </button>
-        </div>
       </div>
 
       {/* ── Status strip ── */}
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</span>
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${serviceDetails.type === 'compliance' ? 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-800' : 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800'}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border ${serviceDetails.type === 'compliance' ? 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-800' : 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800'}`}>
             {formatType(serviceDetails.type)}
           </span>
         </div>
         <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Frequency</span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-900/30 dark:border-blue-800">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-900/30 dark:border-blue-800">
             <Clock size={11} className="mr-1" /> {formatType(serviceDetails.frequency)}
           </span>
         </div>
@@ -214,12 +203,12 @@ export default function ServiceDetails() {
 
           {/* Properties */}
           <Section title="Service Properties" icon={Wrench} accent="slate">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-               <InfoRow label="Default Amount" value={service?.default_amount} icon={IndianRupee} />
-               <InfoRow label="Required Fields" value={service?.required_fields} icon={FileText} />
-               <InfoRow label="Service Remark" value={service?.remark} icon={FileText} />
-               <InfoRow label="Branch Remark" value={branch?.remark} icon={FileText} />
-             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+              <InfoRow label="Default Amount" value={service?.default_amount} icon={IndianRupee} />
+              <InfoRow label="Required Fields" value={service?.required_fields} icon={FileText} />
+              <InfoRow label="Service Remark" value={service?.remark} icon={FileText} />
+              <InfoRow label="Branch Remark" value={branch?.remark} icon={FileText} />
+            </div>
           </Section>
 
           {/* Due Days (Only if relevant) */}

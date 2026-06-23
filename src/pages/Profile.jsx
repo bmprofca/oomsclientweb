@@ -96,12 +96,12 @@ export default function Profile() {
 
   /* ---------- Shared avatar image source ---------- */
   const displayImage = activeTab === 'edit' ? editForm.profileImage : profile.profileImage;
-  const displayName  = activeTab === 'edit' ? (editForm.name || 'Your Name') : profile.name;
+  const displayName = activeTab === 'edit' ? (editForm.name || 'Your Name') : profile.name;
   const displayEmail = activeTab === 'edit' ? (editForm.email || '') : profile.email;
 
   /* ---------- Input class helper ---------- */
   const inputCls =
-    'w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white transition-colors outline-none';
+    'w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white transition-colors outline-none';
 
   /* ---------- Section header ---------- */
   const SectionHeader = ({ icon: Icon, title }) => (
@@ -129,7 +129,7 @@ export default function Profile() {
   /* ---------- Tab navigation items ---------- */
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'edit',     label: 'Edit Profile', icon: Edit2 },
+    { id: 'edit', label: 'Edit Profile', icon: Edit2 },
   ];
 
   return (
@@ -141,7 +141,7 @@ export default function Profile() {
     >
       {/* Success toast */}
       {savedMessage && (
-        <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm shadow-sm">
+        <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-md flex items-center gap-2 text-sm shadow-sm">
           <CheckCircle size={16} className="shrink-0" />
           <span className="font-medium">Profile updated successfully!</span>
         </div>
@@ -154,17 +154,17 @@ export default function Profile() {
         <aside className="w-full lg:w-64 xl:w-72 shrink-0 flex flex-col gap-4">
 
           {/* Profile card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             {/* Cover strip */}
             <div className="h-20 bg-gradient-to-r from-blue-600 to-indigo-600" />
 
             {/* Avatar + info */}
             <div className="flex flex-col items-center px-5 pb-5 -mt-10">
               <div
-                className={`relative group w-20 h-20 rounded-2xl ring-4 ring-white dark:ring-slate-900 shadow-md mb-3 ${activeTab === 'edit' ? 'cursor-pointer' : ''}`}
+                className={`relative group w-20 h-20 rounded-md ring-4 ring-white dark:ring-slate-900 shadow-md mb-3 ${activeTab === 'edit' ? 'cursor-pointer' : ''}`}
                 onClick={handleImageClick}
               >
-                <div className="w-full h-full rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 overflow-hidden flex items-center justify-center">
+                <div className="w-full h-full rounded-md bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 overflow-hidden flex items-center justify-center">
                   {displayImage ? (
                     <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -174,7 +174,7 @@ export default function Profile() {
                   )}
                 </div>
                 {activeTab === 'edit' && (
-                  <div className="absolute inset-0 rounded-2xl bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 rounded-md bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
                     <Camera size={20} />
                     <span className="text-[10px] font-semibold mt-0.5 uppercase tracking-wide">Change</span>
                   </div>
@@ -190,18 +190,18 @@ export default function Profile() {
 
               {/* Quick info chips */}
               <div className="mt-4 w-full space-y-2 text-xs text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-md px-3 py-2">
                   <Mail size={13} className="text-slate-400 shrink-0" />
                   <span className="truncate">{profile.email}</span>
                 </div>
                 {profile.contact && (
-                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-md px-3 py-2">
                     <Phone size={13} className="text-slate-400 shrink-0" />
                     <span>{profile.contact}</span>
                   </div>
                 )}
                 {profile.address && (
-                  <div className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                  <div className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-md px-3 py-2">
                     <MapPin size={13} className="text-slate-400 shrink-0 mt-0.5" />
                     <span className="line-clamp-2">{profile.address}</span>
                   </div>
@@ -211,17 +211,16 @@ export default function Profile() {
           </div>
 
           {/* Tab navigation (vertical on lg, horizontal pills on sm/md) */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-2">
+          <div className="bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 p-2">
             <nav className="flex lg:flex-col gap-1">
               {tabs.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex-1 lg:flex-none ${
-                    activeTab === id
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-md text-sm font-medium transition-colors flex-1 lg:flex-none ${activeTab === id
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
                   <Icon size={16} />
                   <span className="hidden sm:inline">{label}</span>
@@ -238,7 +237,7 @@ export default function Profile() {
           {activeTab === 'overview' && (
             <>
               {/* Personal Details */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <SectionHeader icon={User} title="Personal Details" />
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                   <div>
@@ -257,7 +256,7 @@ export default function Profile() {
               </div>
 
               {/* Address */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <SectionHeader icon={MapPin} title="Address Information" />
                 <div className="p-5">
                   <FieldLabel>Complete Address</FieldLabel>
@@ -266,12 +265,12 @@ export default function Profile() {
               </div>
 
               {/* Business Details */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <SectionHeader icon={Building2} title="Business Details" />
                 <div className="p-5">
                   <FieldLabel>GST Number</FieldLabel>
                   {profile.gstNumber ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-sm text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md font-mono text-sm text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                       <FileText size={13} className="text-slate-500" />
                       {profile.gstNumber}
                     </span>
@@ -285,7 +284,7 @@ export default function Profile() {
 
           {/* ── EDIT TAB ── */}
           {activeTab === 'edit' && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
               <SectionHeader icon={Edit2} title="Edit Profile" />
               <div className="p-5 space-y-5">
 
@@ -340,7 +339,7 @@ export default function Profile() {
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-end gap-3">
                   <button
                     onClick={handleCancelClick}
-                    className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors"
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
                   >
                     <X size={15} />
                     Cancel
@@ -348,7 +347,7 @@ export default function Profile() {
                   <button
                     onClick={handleSaveClick}
                     disabled={isSaving}
-                    className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-emerald-600/20"
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors shadow-sm shadow-emerald-600/20"
                   >
                     {isSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                     {isSaving ? 'Saving...' : 'Save Changes'}

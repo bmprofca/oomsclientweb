@@ -41,7 +41,7 @@ export default function ManagementCard({
   const cardBody = (
     <div
       className={joinClasses(
-        'rounded-lg border bg-white dark:bg-gray-800 p-2.5 shadow-sm transition-all duration-300',
+        'rounded-md border bg-white dark:bg-gray-800 p-2.5 shadow-sm transition-all duration-300',
         accentMap[accent] || accentMap.slate,
         hoverable && 'hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-gray-900/50',
         onClick && 'cursor-pointer',

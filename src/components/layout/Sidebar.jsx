@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  House, 
-  Users, 
-  ConciergeBell, 
-  LifeBuoy,  
+import {
+  House,
+  Users,
+  ConciergeBell,
+  LifeBuoy,
   Briefcase,
   ClipboardList,
   FileBox,
@@ -19,7 +19,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
   const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   const userType = 'admin';
 
   const allMenuItems = [
@@ -100,7 +100,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
                     to={item.path}
                     onClick={() => toggleSidebar()}
                     className={`
-                      flex items-center px-3 py-3 rounded-xl transition-all duration-200 mb-1
+                      flex items-center px-3 py-3 rounded-md transition-all duration-200 mb-1
                       ${isActive
                         ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-700 dark:text-blue-400'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400'
@@ -108,7 +108,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
                     `}
                   >
                     <div className={`
-                      p-2 rounded-lg mr-3
+                      p-2 rounded-md mr-3
                       ${isActive
                         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
@@ -124,7 +124,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
 
             {/* Help Section */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-4">
                 <LifeBuoy className="text-blue-600 dark:text-blue-400 mb-2" size={20} />
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Need Help?</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Contact our support team</p>
@@ -148,7 +148,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
         key={item.label}
         to={item.path}
         className={`
-          flex items-center rounded-xl transition-all duration-200 group
+          flex items-center rounded-md transition-all duration-200 group
           ${isExpandedState ? 'px-3 py-2.5 gap-3' : 'px-0 py-2.5 justify-center'}
           ${isActive
             ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
@@ -158,7 +158,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
         title={!isExpandedState ? item.label : ''}
       >
         <div className={`
-          p-2 rounded-lg transition-all duration-200
+          p-2 rounded-md transition-all duration-200
           ${isExpandedState ? '' : 'mx-auto'}
           ${isActive
             ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
@@ -219,7 +219,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
         {/* Footer Section */}
         {isSidebarExpanded && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-3">
               <LifeBuoy className="text-blue-600 dark:text-blue-400 mb-2" size={16} />
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">Need Help?</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Support</p>

@@ -18,7 +18,7 @@ import toast from 'react-hot-toast';
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 const TRANSACTION_TYPE_CONFIG = {
-  sale:    { label: 'Sale',    color: 'text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' },
+  sale: { label: 'Sale', color: 'text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' },
   receive: { label: 'Receive', color: 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800' },
   payment: { label: 'Payment', color: 'text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800' },
   journal: { label: 'Journal', color: 'text-violet-700 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800' },
@@ -43,30 +43,30 @@ const PRESETS = [
   {
     label: 'This Month',
     from: toIso(new Date(now.getFullYear(), now.getMonth(), 1)),
-    to:   toIso(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+    to: toIso(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
   },
   {
     label: 'Last Month',
     from: toIso(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
-    to:   toIso(new Date(now.getFullYear(), now.getMonth(), 0)),
+    to: toIso(new Date(now.getFullYear(), now.getMonth(), 0)),
   },
   {
     label: 'This Qtr',
     from: toIso(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)),
-    to:   toIso(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 0)),
+    to: toIso(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 0)),
   },
   {
     label: 'This Year',
     from: `${now.getFullYear()}-01-01`,
-    to:   `${now.getFullYear()}-12-31`,
+    to: `${now.getFullYear()}-12-31`,
   },
 ];
 
 const DEFAULT_FROM = `${now.getFullYear()}-01-01`;
-const DEFAULT_TO   = toIso(now);
+const DEFAULT_TO = toIso(now);
 
 const TYPE_OPTIONS = [
-  { value: 'sale',    label: 'Sale' },
+  { value: 'sale', label: 'Sale' },
   { value: 'receive', label: 'Receive' },
   { value: 'payment', label: 'Payment' },
   { value: 'journal', label: 'Journal' },
@@ -76,7 +76,7 @@ const TYPE_OPTIONS = [
 
 function StatCard({ label, value, valueClass, iconBg, Icon, subtext }) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between min-w-0">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between min-w-0">
       <div className="flex justify-between items-start">
         <div className="min-w-0 flex-1">
           <h3 className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider truncate">
@@ -86,7 +86,7 @@ function StatCard({ label, value, valueClass, iconBg, Icon, subtext }) {
             {value}
           </p>
         </div>
-        <div className={`ml-3 shrink-0 p-2.5 rounded-xl ${iconBg}`}>
+        <div className={`ml-3 shrink-0 p-2.5 rounded-md ${iconBg}`}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
@@ -105,19 +105,18 @@ function ViewToggle({ viewMode, onChange }) {
       type="button"
       title={title}
       onClick={() => onChange(mode)}
-      className={`p-1.5 rounded-md transition-colors ${
-        viewMode === mode
-          ? 'bg-blue-600 text-white shadow-sm'
-          : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-      }`}
+      className={`p-1.5 rounded-md transition-colors ${viewMode === mode
+        ? 'bg-blue-600 text-white shadow-sm'
+        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+        }`}
     >
       <Icon size={13} />
     </button>
   );
   return (
-    <div className="flex items-center gap-0.5 p-0.5 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div className="flex items-center gap-0.5 p-0.5 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       {btn('table', FaListUl, 'Table view')}
-      {btn('card',  FaTh,     'Card view')}
+      {btn('card', FaTh, 'Card view')}
     </div>
   );
 }
@@ -128,25 +127,25 @@ export default function Ledger() {
   const [viewMode, setViewMode] = useState('table');
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
-  const [typeFilter, setTypeFilter]     = useState(null);
-  const [refreshing, setRefreshing]     = useState(false);
+  const [typeFilter, setTypeFilter] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // dateFilter shape: { from_date, to_date, date, month, year }
   const [dateFilter, setDateFilter] = useState({
     from_date: DEFAULT_FROM,
-    to_date:   DEFAULT_TO,
+    to_date: DEFAULT_TO,
     date: '', month: '', year: '',
   });
 
-  const [transactions, setTransactions]     = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [openingBalance, setOpeningBalance] = useState({ debit: 0, credit: 0, balance: 0 });
-  const [isLoading, setIsLoading]           = useState(true);
-  const [isModalOpen, setIsModalOpen]       = useState(false);
-  const [selectedItem, setSelectedItem]     = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   // Resolved date strings (fall back to defaults when cleared)
   const fromDate = dateFilter.from_date || DEFAULT_FROM;
-  const toDate   = dateFilter.to_date   || DEFAULT_TO;
+  const toDate = dateFilter.to_date || DEFAULT_TO;
 
   // ── fetch ────────────────────────────────────────────────────────────────────
 
@@ -155,9 +154,9 @@ export default function Ledger() {
     else setIsLoading(true);
     try {
       const typeQuery = typeFilter ? `&transaction_type=${typeFilter.value}` : '';
-      const endpoint  = `/transaction/list?page_no=${pagination.page}&limit=${pagination.limit}&from_date=${fromDate}&to_date=${toDate}${typeQuery}`;
-      const response  = await apiCall(endpoint, 'GET');
-      const data      = await response.json();
+      const endpoint = `/transaction/list?page_no=${pagination.page}&limit=${pagination.limit}&from_date=${fromDate}&to_date=${toDate}${typeQuery}`;
+      const response = await apiCall(endpoint, 'GET');
+      const data = await response.json();
       if (response.ok && data.success !== false) {
         setTransactions(data.data || []);
         setOpeningBalance(data.opening_balance || { debit: 0, credit: 0, balance: 0 });
@@ -173,7 +172,7 @@ export default function Ledger() {
       setIsLoading(false);
       setRefreshing(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, pagination.limit, fromDate, toDate, typeFilter]);
 
   useEffect(() => {
@@ -183,8 +182,8 @@ export default function Ledger() {
 
   // ── computed ──────────────────────────────────────────────────────────────────
 
-  const totalDebit     = transactions.reduce((a, t) => a + (t.payment?.debit  || 0), 0);
-  const totalCredit    = transactions.reduce((a, t) => a + (t.payment?.credit || 0), 0);
+  const totalDebit = transactions.reduce((a, t) => a + (t.payment?.debit || 0), 0);
+  const totalCredit = transactions.reduce((a, t) => a + (t.payment?.credit || 0), 0);
   const closingBalance = transactions.length > 0
     ? transactions[transactions.length - 1].payment?.balance ?? openingBalance.balance
     : openingBalance.balance;
@@ -207,7 +206,7 @@ export default function Ledger() {
     const resolved = {
       ...val,
       from_date: val.from_date || DEFAULT_FROM,
-      to_date:   val.to_date   || DEFAULT_TO,
+      to_date: val.to_date || DEFAULT_TO,
     };
     setDateFilter(resolved);
     goToPage(1);
@@ -218,13 +217,13 @@ export default function Ledger() {
    * from_date -> first day of target month, to_date -> last day of target month.
    */
   const shiftMonth = (delta) => {
-    const base  = new Date(fromDate + 'T00:00:00');
-    const newY  = base.getFullYear();
-    const newM  = base.getMonth() + delta; // can overflow — Date handles it
+    const base = new Date(fromDate + 'T00:00:00');
+    const newY = base.getFullYear();
+    const newM = base.getMonth() + delta; // can overflow — Date handles it
     const first = new Date(newY, newM, 1);
-    const last  = new Date(newY, newM + 1, 0);
-    const from  = toIso(first);
-    const to    = toIso(last);
+    const last = new Date(newY, newM + 1, 0);
+    const from = toIso(first);
+    const to = toIso(last);
     setDateFilter({ from_date: from, to_date: to, date: '', month: '', year: '' });
     goToPage(1);
   };
@@ -247,7 +246,7 @@ export default function Ledger() {
       label: 'Type',
       render: (row) => {
         const cfg = getTypeConfig(row.transaction_type);
-        return <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</span>;
+        return <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</span>;
       },
     },
     {
@@ -338,7 +337,7 @@ export default function Ledger() {
       onRefresh={undefined}
     >
       {/* ── Controls bar ───────────────────────────────────────────────────── */}
-      <div className="mt-3 mb-3 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 px-3 py-2.5 shadow-sm">
+      <div className="mt-3 mb-3 bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 px-3 py-2.5 shadow-sm">
 
         {/* Single row: [‹] [date picker] [›] · presets · | · type · view · refresh */}
         <div className="flex flex-wrap items-center gap-2">
@@ -348,7 +347,7 @@ export default function Ledger() {
             type="button"
             title="Previous month"
             onClick={() => shiftMonth(-1)}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
+            className="p-1.5 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
           >
             <FaChevronLeft size={11} />
           </button>
@@ -360,7 +359,7 @@ export default function Ledger() {
               onChange={handleDateFilterChange}
               placeholder="Date range…"
               tabOptions={['range']}
-              buttonClassName="rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 px-2.5 py-1.5 text-slate-700 dark:text-gray-200 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors w-full text-xs"
+              buttonClassName="rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 px-2.5 py-1.5 text-slate-700 dark:text-gray-200 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors w-full text-xs"
             />
           </div>
 
@@ -369,7 +368,7 @@ export default function Ledger() {
             type="button"
             title="Next month"
             onClick={() => shiftMonth(1)}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
+            className="p-1.5 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
           >
             <FaChevronRight size={11} />
           </button>
@@ -383,11 +382,10 @@ export default function Ledger() {
                   key={preset.label}
                   type="button"
                   onClick={() => applyPreset(preset)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all whitespace-nowrap ${
-                    active
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                      : 'bg-white dark:bg-gray-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-400'
-                  }`}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all whitespace-nowrap ${active
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                    : 'bg-white dark:bg-gray-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-400'
+                    }`}
                 >
                   {preset.label}
                 </button>
@@ -418,7 +416,7 @@ export default function Ledger() {
               onClick={() => fetchTransactions(true)}
               disabled={refreshing}
               title="Refresh ledger"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-gray-700 hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-50 whitespace-nowrap"
             >
               <FaSyncAlt size={11} className={refreshing ? 'animate-spin' : ''} />
               Refresh
@@ -447,7 +445,7 @@ export default function Ledger() {
           <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-emerald-500" />
         </div>
       ) : transactions.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 py-10 text-center flex flex-col items-center">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 py-10 text-center flex flex-col items-center">
           <ArrowRightLeft className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No transactions in this period</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Adjust the date range or clear the type filter</p>
@@ -475,7 +473,7 @@ export default function Ledger() {
                 accent="emerald"
                 icon={<Receipt size={15} />}
                 badge={
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${cfg.color}`}>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${cfg.color}`}>
                     {cfg.label}
                   </span>
                 }
@@ -487,9 +485,9 @@ export default function Ledger() {
               >
                 <div className="mt-2 grid grid-cols-3 gap-1 text-xs border-t border-slate-100 dark:border-gray-700 pt-1.5">
                   {[
-                    { lbl: 'Debit',   val: txn.payment?.debit   ? formatAmount(txn.payment.debit)   : '—', cls: 'text-blue-700 dark:text-blue-400' },
-                    { lbl: 'Credit',  val: txn.payment?.credit  ? formatAmount(txn.payment.credit)  : '—', cls: 'text-emerald-700 dark:text-emerald-400' },
-                    { lbl: 'Balance', val: formatAmount(txn.payment?.balance ?? 0),                         cls: (txn.payment?.balance ?? 0) >= 0 ? 'text-slate-700 dark:text-gray-200' : 'text-red-600 dark:text-red-400' },
+                    { lbl: 'Debit', val: txn.payment?.debit ? formatAmount(txn.payment.debit) : '—', cls: 'text-blue-700 dark:text-blue-400' },
+                    { lbl: 'Credit', val: txn.payment?.credit ? formatAmount(txn.payment.credit) : '—', cls: 'text-emerald-700 dark:text-emerald-400' },
+                    { lbl: 'Balance', val: formatAmount(txn.payment?.balance ?? 0), cls: (txn.payment?.balance ?? 0) >= 0 ? 'text-slate-700 dark:text-gray-200' : 'text-red-600 dark:text-red-400' },
                   ].map(({ lbl, val, cls }) => (
                     <div key={lbl}>
                       <p className="text-[9px] text-slate-400 uppercase tracking-wider">{lbl}</p>
@@ -530,7 +528,7 @@ export default function Ledger() {
                 <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{selectedItem.invoice_no}</p>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5 break-all">{selectedItem.transaction_id}</p>
               </div>
-              <span className={`shrink-0 ml-3 mt-0.5 px-2.5 py-1 rounded text-xs font-bold ${getTypeConfig(selectedItem.transaction_type).color}`}>
+              <span className={`shrink-0 ml-3 mt-0.5 px-2.5 py-1 rounded-md text-xs font-bold ${getTypeConfig(selectedItem.transaction_type).color}`}>
                 {getTypeConfig(selectedItem.transaction_type).label}
               </span>
             </div>
@@ -548,11 +546,11 @@ export default function Ledger() {
             </div>
 
             {/* Payment breakdown */}
-            <div className="bg-slate-50 dark:bg-gray-900/60 rounded-lg border border-slate-100 dark:border-gray-800 divide-y divide-slate-100 dark:divide-gray-800 overflow-hidden">
+            <div className="bg-slate-50 dark:bg-gray-900/60 rounded-md border border-slate-100 dark:border-gray-800 divide-y divide-slate-100 dark:divide-gray-800 overflow-hidden">
               {[
-                { icon: <TrendingUp  size={12} className="text-blue-500"    />, label: 'Debit',           val: formatAmount(selectedItem.payment?.debit   ?? 0), cls: 'text-blue-700 dark:text-blue-400 font-semibold' },
-                { icon: <TrendingDown size={12} className="text-emerald-500" />, label: 'Credit',          val: formatAmount(selectedItem.payment?.credit  ?? 0), cls: 'text-emerald-700 dark:text-emerald-400 font-semibold' },
-                { icon: <Wallet       size={12} className="text-amber-500"   />, label: 'Running Balance', val: formatAmount(selectedItem.payment?.balance ?? 0), cls: `font-extrabold ${(selectedItem.payment?.balance ?? 0) >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-600 dark:text-red-400'}` },
+                { icon: <TrendingUp size={12} className="text-blue-500" />, label: 'Debit', val: formatAmount(selectedItem.payment?.debit ?? 0), cls: 'text-blue-700 dark:text-blue-400 font-semibold' },
+                { icon: <TrendingDown size={12} className="text-emerald-500" />, label: 'Credit', val: formatAmount(selectedItem.payment?.credit ?? 0), cls: 'text-emerald-700 dark:text-emerald-400 font-semibold' },
+                { icon: <Wallet size={12} className="text-amber-500" />, label: 'Running Balance', val: formatAmount(selectedItem.payment?.balance ?? 0), cls: `font-extrabold ${(selectedItem.payment?.balance ?? 0) >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-600 dark:text-red-400'}` },
               ].map(({ icon, label, val, cls }) => (
                 <div key={label} className="flex justify-between items-center px-3 py-2">
                   <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">{icon} {label}</span>

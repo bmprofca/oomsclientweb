@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckSquare, ArrowLeft, Building2, Wrench, IndianRupee,
-  CalendarDays, Clock, Upload, Edit, Users, Receipt,
+  CalendarDays, Clock, Upload, Users, Receipt,
   BadgeCheck, AlertCircle, Loader2, FileText, Tag
 } from 'lucide-react';
 import { apiCall } from '../utils/apiCall';
@@ -35,7 +35,7 @@ const StatusBadge = ({ status }) => {
   else if (s.includes('progress')) cls = 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-900/30 dark:border-blue-800';
   else if (s.includes('cancel')) cls = 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/30 dark:border-red-800';
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${cls}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border ${cls}`}>
       {status || 'Unknown'}
     </span>
   );
@@ -63,7 +63,7 @@ const Section = ({ title, icon: Icon, accent = 'amber', children }) => {
     slate: 'border-slate-400 text-slate-500 dark:text-slate-400',
   };
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
       <div className={`flex items-center gap-2 px-5 py-3.5 border-b-2 ${accents[accent]} border-opacity-60 bg-slate-50/60 dark:bg-slate-800/40`}>
         {Icon && <Icon size={15} className={accents[accent].split(' ')[1]} />}
         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight">{title}</h3>
@@ -126,7 +126,7 @@ export default function TaskDetails() {
         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{error || 'Task not found'}</p>
         <button
           onClick={() => navigate('/tasks')}
-          className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md transition-colors"
         >
           <ArrowLeft size={15} />
           Back to Tasks
@@ -145,7 +145,7 @@ export default function TaskDetails() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
           >
             <ArrowLeft size={16} />
           </button>
@@ -157,28 +157,10 @@ export default function TaskDetails() {
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{task.task_id}</p>
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => navigate(`/tasks/${task_id}/documents`)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 text-sm font-semibold rounded-xl border border-indigo-200 dark:border-indigo-800 transition-colors"
-          >
-            <Upload size={14} />
-            Upload Documents
-          </button>
-          <button
-            onClick={() => console.log('Edit task', task_id)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-amber-600/20"
-          >
-            <Edit size={14} />
-            Edit Task
-          </button>
-        </div>
       </div>
 
       {/* ── Status strip ── */}
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Task Status</span>
           <StatusBadge status={status} />
@@ -191,7 +173,7 @@ export default function TaskDetails() {
         {is_recurring && (
           <>
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-400">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-400">
               <Clock size={11} /> Recurring
             </span>
           </>

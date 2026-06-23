@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Menu, 
-  X, 
-  User, 
-  ChevronDown, 
-  Settings, 
+import {
+  Menu,
+  X,
+  User,
+  ChevronDown,
+  Settings,
   LogOut,
   Sun,
   Moon,
@@ -42,7 +42,7 @@ const Navbar = ({
             <div className="flex items-center space-x-4">
               <button
                 onClick={toggleSidebar}
-                className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 focus:outline-none flex-shrink-0
+                className={`w-10 h-10 flex items-center justify-center rounded-md transition-all duration-200 focus:outline-none flex-shrink-0
                   ${isSidebarOpen ? 'text-gray-600 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                 aria-label="Toggle menu"
               >
@@ -52,9 +52,9 @@ const Navbar = ({
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2 rounded-lg transition-opacity duration-200 hover:opacity-90 focus:outline-none"
+                className="flex items-center gap-2 rounded-md transition-opacity duration-200 hover:opacity-90 focus:outline-none"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-md flex items-center justify-center shadow-md">
                   <span className="text-white font-bold text-sm">O</span>
                 </div>
                 <div>
@@ -70,7 +70,7 @@ const Navbar = ({
               {/* Desktop Switch Profile Button */}
               <button
                 onClick={openProfileModal}
-                className="hidden md:flex items-center gap-2 px-3 h-10 rounded-xl transition-all duration-300 group focus:outline-none
+                className="hidden md:flex items-center gap-2 px-3 h-10 rounded-md transition-all duration-300 group focus:outline-none
                   bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/40
                   text-indigo-600 dark:text-indigo-400 font-medium text-sm
                   border border-indigo-100 dark:border-indigo-800/50"
@@ -83,7 +83,7 @@ const Navbar = ({
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 group focus:outline-none
+                className="relative w-10 h-10 flex items-center justify-center rounded-md transition-all duration-300 group focus:outline-none
                   bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
                   border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500
                   hover:shadow-md active:scale-95"
@@ -102,11 +102,11 @@ const Navbar = ({
               <div className="relative">
                 <button
                   onClick={() => setOpenDropdown(!openDropdown)}
-                  className="flex items-center space-x-3 p-1.5 pr-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+                  className="flex items-center space-x-3 p-1.5 pr-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
                 >
                   {/* Avatar */}
                   <div className="relative">
-                    <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center shadow-md bg-gradient-to-br from-blue-500 to-indigo-600">
+                    <div className="w-9 h-9 rounded-md overflow-hidden flex items-center justify-center shadow-md bg-gradient-to-br from-blue-500 to-indigo-600">
                       <span className="text-white font-bold text-sm">
                         {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                       </span>
@@ -131,10 +131,10 @@ const Navbar = ({
                 {openDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(false)} />
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-gray-950/50 border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-xl dark:shadow-gray-950/50 border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
                       {/* Mobile user info */}
                       <div className="md:hidden p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-md overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                           <span className="text-white font-bold">
                             {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                           </span>
