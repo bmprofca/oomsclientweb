@@ -11,9 +11,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
 import Task from "./pages/Task";
-import TaskDocumentUpload from "./pages/TaskDocumentUpload";
 import Profile from "./pages/Profile";
 import Firms from "./pages/Firms";
+import Documents from "./pages/Documents";
 import Ledger from "./pages/Ledger";
 import Updates from "./pages/updates";
 import Chat from "./pages/Chat";
@@ -46,10 +46,10 @@ function App() {
               <Route path="/tasks/ongoing" element={<Task />} />
               <Route path="/tasks/completed" element={<Task />} />
               <Route path="/task/:task_id" element={<TaskDetails />} />
-              <Route path="/tasks/:task_id/documents" element={<TaskDocumentUpload />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/firms" element={<Firms />} />
               <Route path="/firm/:firm_id" element={<FirmDetails />} />
+              <Route path="/documents" element={<Documents />} />
               <Route path="/ledger" element={<Ledger />} />
                 <Route path="/updates" element={<Updates />} />
                 <Route path="/chat" element={<Chat />} />

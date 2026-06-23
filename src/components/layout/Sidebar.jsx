@@ -47,6 +47,12 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       roles: ['admin'],
     },
     {
+      icon: FileBox,
+      label: 'Documents',
+      path: '/documents',
+      roles: ['admin'],
+    },
+    {
       icon: Receipt,
       label: 'Ledger',
       path: '/ledger',

@@ -128,7 +128,6 @@ export default function Task() {
 
   const getRowActions = (row) => [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
-    { id: 'upload', label: 'Upload Documents', icon: <Upload size={14} />, color: 'indigo', onClick: () => navigate(`/tasks/${row.task_id}/documents`) },
   ];
 
   return (
