@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Briefcase, IndianRupee, Users, ClipboardList, House, Download, FileText } from 'lucide-react';
 import SelectField from '../common/SelectField';
 import ManagementTable from '../common/ManagementTable';
 import ManagementCard from '../common/ManagementCard';
 import ManagementGrid from '../common/ManagementGrid';
 import Pagination, { usePagination } from '../common/PaginationComponent';
+import { PageContentSkeleton } from '../SkeletonComponent';
 import { apiCall } from '../../utils/apiCall';
 import toast from 'react-hot-toast';
 
@@ -23,10 +24,23 @@ export default function OutputDocs() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters
-  const [firmId, setFirmId] = useState('');
+  const [selectedFirm, setSelectedFirm] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
+
+  // Firm dropdown state
+  const [firmOptions, setFirmOptions] = useState([]);
+  const [firmPage, setFirmPage] = useState(1);
+  const [firmHasMore, setFirmHasMore] = useState(true);
+  const [firmIsLoading, setFirmIsLoading] = useState(false);
+  const [firmSearch, setFirmSearch] = useState('');
+  const firmSearchTimerRef = useRef(null);
+  const docsAbortRef = useRef(null);  // cancel in-flight document requests
+  const firmAbortRef = useRef(null);  // cancel in-flight firm requests
+  const typesAbortRef = useRef(null); // cancel in-flight types requests
+  const firmLoadedRef = useRef(false);  // true once firms have been fetched at least once
+  const typesLoadedRef = useRef(false); // true once types have been fetched at least once
 
   // Document Types from API
   const [documentTypes, setDocumentTypes] = useState({});
@@ -37,34 +51,122 @@ export default function OutputDocs() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch document types
-  useEffect(() => {
-    const fetchTypes = async () => {
-      try {
-        const response = await apiCall('/document/types', 'GET');
-        const data = await response.json();
-        if (data.success) {
-          setDocumentTypes(data.data || {});
-        }
-      } catch (error) {
-        console.error('Failed to fetch document types:', error);
+  // Fetch document types — lazy, called only on first open of types dropdown
+  const fetchDocumentTypes = useCallback(async () => {
+    if (typesAbortRef.current) typesAbortRef.current.abort();
+    const controller = new AbortController();
+    typesAbortRef.current = controller;
+    try {
+      const response = await apiCall('/document/types', 'GET', null, { signal: controller.signal });
+      const data = await response.json();
+      if (data.success) {
+        setDocumentTypes(data.data || {});
       }
-    };
-    fetchTypes();
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      console.error('Failed to fetch document types:', error);
+    }
   }, []);
 
-  // Fetch documents
-  const fetchDocuments = async () => {
+  // Open types dropdown → fetch types once
+  const handleTypeMenuOpen = () => {
+    if (typesLoadedRef.current) return;
+    typesLoadedRef.current = true;
+    fetchDocumentTypes();
+  };
+
+  // Fetch firms for dropdown — lazy, with AbortController to prevent duplicate calls
+  const fetchFirmOptions = useCallback(async (search = '', page = 1, append = false) => {
+    if (firmAbortRef.current) firmAbortRef.current.abort();
+    const controller = new AbortController();
+    firmAbortRef.current = controller;
+
+    setFirmIsLoading(true);
+    try {
+      const endpoint = `/firm/list?page_no=${page}&limit=20&search=${encodeURIComponent(search)}`;
+      const response = await apiCall(endpoint, 'GET', null, { signal: controller.signal });
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        const options = (data.data || []).map((f) => ({
+          label: f.firm_name,
+          value: f.firm_id,
+        }));
+        if (append) {
+          setFirmOptions((prev) => {
+            const existingIds = new Set(prev.map((o) => o.value));
+            return [...prev, ...options.filter((o) => !existingIds.has(o.value))];
+          });
+        } else {
+          setFirmOptions(options);
+        }
+        const total = data.pagination?.total ?? 0;
+        setFirmHasMore(page * 20 < total);
+      } else {
+        if (!append) setFirmOptions([]);
+        setFirmHasMore(false);
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('Failed to load firms:', err);
+      if (!append) setFirmOptions([]);
+      setFirmHasMore(false);
+    } finally {
+      setFirmIsLoading(false);
+    }
+  }, []);
+
+  // Open firm dropdown → fetch firms once on first open
+  const handleFirmMenuOpen = () => {
+    if (firmLoadedRef.current) return;
+    firmLoadedRef.current = true;
+    fetchFirmOptions('', 1, false);
+  };
+
+  // Handle firm search with debounce
+  // Guard: skip if firms haven't been loaded yet (onMenuOpen owns the first fetch)
+  //        or if the input value hasn't actually changed (react-select fires '' on open)
+  const handleFirmInputChange = (inputValue, { action } = {}) => {
+    // react-select fires onInputChange with action='set-value' or 'input-blur' on select/blur
+    // We only want to search on actual typing (action === 'input-change')
+    if (action && action !== 'input-change') return;
+    if (!firmLoadedRef.current) return; // first load is owned by onMenuOpen
+    if (inputValue === firmSearch) return; // no real change
+
+    setFirmSearch(inputValue);
+    if (firmSearchTimerRef.current) clearTimeout(firmSearchTimerRef.current);
+    firmSearchTimerRef.current = setTimeout(() => {
+      setFirmPage(1);
+      fetchFirmOptions(inputValue, 1, false);
+    }, 300);
+  };
+
+  // Handle firm dropdown scroll to bottom → load next page
+  const handleFirmMenuScrollToBottom = () => {
+    if (!firmHasMore || firmIsLoading) return;
+    const nextPage = firmPage + 1;
+    setFirmPage(nextPage);
+    fetchFirmOptions(firmSearch, nextPage, true);
+  };
+
+  // Fetch documents — cancel any previous in-flight request first
+  const fetchDocuments = useCallback(async () => {
+    // Abort previous request if still running
+    if (docsAbortRef.current) {
+      docsAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    docsAbortRef.current = controller;
+
     setIsLoading(true);
     try {
       let queryParams = `?page_no=${pagination.page}&limit=${pagination.limit}`;
-      if (firmId) queryParams += `&firm_id=${encodeURIComponent(firmId)}`;
+      if (selectedFirm) queryParams += `&firm_id=${encodeURIComponent(selectedFirm.value)}`;
       if (selectedType) queryParams += `&type=${encodeURIComponent(selectedType.value)}`;
       if (year) queryParams += `&year=${encodeURIComponent(year)}`;
       if (month) queryParams += `&month=${encodeURIComponent(month)}`;
 
       const endpoint = `/document/list/${activeCategory}${queryParams}`;
-      const response = await apiCall(endpoint, 'GET');
+      const response = await apiCall(endpoint, 'GET', null, { signal: controller.signal });
       const data = await response.json();
 
       if (response.ok && data.success !== false) {
@@ -77,21 +179,26 @@ export default function OutputDocs() {
         updatePagination({ total: 0 });
       }
     } catch (error) {
+      if (error.name === 'AbortError') return; // Ignore cancelled requests
       console.error('Failed to fetch documents:', error);
       toast.error('Failed to load documents');
       setDocuments([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, pagination.page, pagination.limit, selectedFirm, selectedType, year, month]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchDocuments();
     }, 300);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, pagination.page, pagination.limit, firmId, selectedType, year, month]);
+    return () => {
+      clearTimeout(timer);
+      // Abort any in-flight request when dependencies change or component unmounts
+      if (docsAbortRef.current) docsAbortRef.current.abort();
+    };
+  }, [fetchDocuments]);
 
   // Handle Category Change
   const handleCategoryChange = (categoryId) => {
@@ -154,13 +261,20 @@ export default function OutputDocs() {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Firm ID</label>
-          <input
-            type="text"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-            placeholder="Enter Firm ID"
-            value={firmId}
-            onChange={(e) => { setFirmId(e.target.value); goToPage(1); }}
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Firm</label>
+          <SelectField
+            options={firmOptions}
+            value={selectedFirm}
+            onChange={(val) => { setSelectedFirm(val); goToPage(1); }}
+            placeholder="Search & select firm..."
+            isClearable
+            isSearchable
+            isLoading={firmIsLoading}
+            onMenuOpen={handleFirmMenuOpen}
+            onInputChange={handleFirmInputChange}
+            onMenuScrollToBottom={handleFirmMenuScrollToBottom}
+            filterOption={() => true}
+            noOptionsMessage={() => firmIsLoading ? 'Loading...' : 'No firms found'}
           />
         </div>
         <div>
@@ -171,6 +285,9 @@ export default function OutputDocs() {
             onChange={(val) => { setSelectedType(val); goToPage(1); }}
             placeholder="Select Type..."
             isClearable
+            onMenuOpen={handleTypeMenuOpen}
+            isLoading={!typesLoadedRef.current && documentTypes[activeCategory] === undefined}
+            noOptionsMessage={() => !typesLoadedRef.current ? 'Open to load types...' : 'No types found'}
           />
         </div>
         <div>
@@ -197,9 +314,7 @@ export default function OutputDocs() {
 
       {/* Results */}
       {isLoading ? (
-        <div className="flex justify-center p-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
-        </div>
+        <PageContentSkeleton viewMode={viewMode} columns={6} rows={6} />
       ) : documents.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
           <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
