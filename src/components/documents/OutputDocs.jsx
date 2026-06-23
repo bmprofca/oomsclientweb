@@ -15,6 +15,19 @@ const categories = [
   { id: 'task', label: 'Task', icon: ClipboardList },
 ];
 
+// Generate last 7 financial years: e.g. 2024-25, 2023-24 ...
+const currentFY = new Date().getFullYear();
+const yearOptions = Array.from({ length: 7 }, (_, i) => {
+  const start = currentFY - i;
+  const label = `${start}-${String(start + 1).slice(-2)}`;
+  return { label, value: label };
+});
+
+const monthOptions = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+].map((m) => ({ label: m, value: m }));
+
 export default function OutputDocs() {
   const [activeCategory, setActiveCategory] = useState('gst');
   const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
@@ -26,8 +39,8 @@ export default function OutputDocs() {
   // Filters
   const [selectedFirm, setSelectedFirm] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
-  const [year, setYear] = useState('');
-  const [month, setMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   // Firm dropdown state
   const [firmOptions, setFirmOptions] = useState([]);
@@ -160,10 +173,10 @@ export default function OutputDocs() {
     setIsLoading(true);
     try {
       let queryParams = `?page_no=${pagination.page}&limit=${pagination.limit}`;
-      if (selectedFirm) queryParams += `&firm_id=${encodeURIComponent(selectedFirm.value)}`;
-      if (selectedType) queryParams += `&type=${encodeURIComponent(selectedType.value)}`;
-      if (year) queryParams += `&year=${encodeURIComponent(year)}`;
-      if (month) queryParams += `&month=${encodeURIComponent(month)}`;
+      if (selectedFirm)  queryParams += `&firm_id=${encodeURIComponent(selectedFirm.value)}`;
+      if (selectedType)  queryParams += `&type=${encodeURIComponent(selectedType.value)}`;
+      if (selectedYear)  queryParams += `&year=${encodeURIComponent(selectedYear.value)}`;
+      if (selectedMonth) queryParams += `&month=${encodeURIComponent(selectedMonth.value)}`;
 
       const endpoint = `/document/list/${activeCategory}${queryParams}`;
       const response = await apiCall(endpoint, 'GET', null, { signal: controller.signal });
@@ -187,7 +200,7 @@ export default function OutputDocs() {
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, pagination.page, pagination.limit, selectedFirm, selectedType, year, month]);
+  }, [activeCategory, pagination.page, pagination.limit, selectedFirm, selectedType, selectedYear, selectedMonth]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -292,22 +305,22 @@ export default function OutputDocs() {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
-          <input
-            type="text"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-            placeholder="e.g. 2024-25"
-            value={year}
-            onChange={(e) => { setYear(e.target.value); goToPage(1); }}
+          <SelectField
+            options={yearOptions}
+            value={selectedYear}
+            onChange={(val) => { setSelectedYear(val); goToPage(1); }}
+            placeholder="Select year..."
+            isClearable
           />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Month</label>
-          <input
-            type="text"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-            placeholder="e.g. April"
-            value={month}
-            onChange={(e) => { setMonth(e.target.value); goToPage(1); }}
+          <SelectField
+            options={monthOptions}
+            value={selectedMonth}
+            onChange={(val) => { setSelectedMonth(val); goToPage(1); }}
+            placeholder="Select month..."
+            isClearable
           />
         </div>
       </div>
