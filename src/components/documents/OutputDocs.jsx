@@ -9,11 +9,9 @@ import { apiCall } from '../../utils/apiCall';
 import toast from 'react-hot-toast';
 
 const categories = [
-  { id: 'it', label: 'Income Tax', icon: Briefcase },
   { id: 'gst', label: 'GST', icon: IndianRupee },
   { id: 'mca', label: 'MCA', icon: Users },
   { id: 'task', label: 'Task', icon: ClipboardList },
-  { id: 'general', label: 'General', icon: House },
 ];
 
 export default function OutputDocs() {
