@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { PageContentSkeleton } from '../components/SkeletonComponent';
 import { Layers, Eye, Activity, Box, IndianRupee } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
@@ -152,9 +153,7 @@ export default function Services() {
         />
 
         {isLoading ? (
-          <div className="flex justify-center p-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          </div>
+          <PageContentSkeleton viewMode={viewMode} columns={5} rows={6} />
         ) : services.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
             <Box className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DetailSkeleton } from '../components/SkeletonComponent';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Building2, Wrench, IndianRupee,
@@ -113,9 +114,8 @@ export default function FirmDetails() {
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <p className="text-sm font-medium">Loading firm details…</p>
+      <div className="p-6 max-w-4xl mx-auto">
+        <DetailSkeleton />
       </div>
     );
   }

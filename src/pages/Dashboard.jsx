@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  Wallet, Activity, CheckCircle, Building2, CreditCard,
+  Activity, CheckCircle, Building2, CreditCard,
   ArrowRight, TrendingUp, TrendingDown, Clock, XCircle,
-  RefreshCw, AlertCircle,
+  RefreshCw, AlertCircle, Receipt, Layers, CheckSquare,
+  BarChart2, Users,
 } from 'lucide-react';
+import { PageContentSkeleton } from '../components/SkeletonComponent';
 import { formatAmount } from '../utils/helpers';
 import { apiCall } from '../utils/apiCall';
 import Modal from '../components/common/Modal';
@@ -15,9 +17,9 @@ import toast from 'react-hot-toast';
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.07 } },
 };
-const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } };
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
 // ── stat card ────────────────────────────────────────────────────────────────
 
@@ -26,19 +28,19 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor, footer, onClick
     <motion.div
       variants={item}
       onClick={onClick}
-      className={`bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between gap-3 transition-all duration-200 ${onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 hover:-translate-y-0.5' : ''}`}
+      className={`bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between gap-3 transition-all duration-200 ${onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 hover:-translate-y-0.5' : ''}`}
     >
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">{label}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-[11px] font-semibold uppercase tracking-wider">{label}</p>
           {loading ? (
-            <div className="mt-2 h-8 w-20 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
+            <div className="mt-2 h-8 w-16 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
           ) : (
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1 tabular-nums">{value}</p>
           )}
         </div>
-        <div className={`p-2.5 rounded-lg ${iconBg}`}>
-          <Icon className={`w-5 h-5 ${iconColor}`} />
+        <div className={`p-2.5 rounded-lg ${iconBg} shrink-0`}>
+          <Icon className={`w-4 h-4 ${iconColor}`} />
         </div>
       </div>
       {footer && (
@@ -47,6 +49,59 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor, footer, onClick
         </div>
       )}
     </motion.div>
+  );
+}
+
+// ── quick link card ──────────────────────────────────────────────────────────
+
+function QuickLinkCard({ label, description, path, icon: Icon, iconBg, iconColor, onClick }) {
+  return (
+    <motion.button
+      variants={item}
+      type="button"
+      onClick={onClick}
+      className="w-full text-left bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3.5 flex items-center gap-3 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 hover:-translate-y-0.5 transition-all duration-200 group"
+    >
+      <div className={`p-2.5 rounded-lg ${iconBg} shrink-0`}>
+        <Icon className={`w-4 h-4 ${iconColor}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-tight">{label}</p>
+        {description && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">{description}</p>}
+      </div>
+      <ArrowRight size={14} className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+    </motion.button>
+  );
+}
+
+// ── dashboard loading skeleton ───────────────────────────────────────────────
+
+function DashboardSkeleton() {
+  return (
+    <div className="animate-pulse space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <div className="h-7 w-40 bg-gray-200 dark:bg-gray-700 rounded-md" />
+          <div className="h-4 w-56 bg-gray-200 dark:bg-gray-700 rounded-md" />
+        </div>
+        <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+      </div>
+      {/* Hero card */}
+      <div className="h-36 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+      {/* Stat row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+        ))}
+      </div>
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-36 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -119,7 +174,26 @@ const Dashboard = () => {
     }, 1200);
   };
 
+  // ── quick links config ─────────────────────────────────────────────────────
+
+  const quickLinks = [
+    { label: 'Transaction Ledger', description: 'Sales, payments & journals', path: '/ledger', icon: Receipt, iconBg: 'bg-emerald-50 dark:bg-emerald-950/40', iconColor: 'text-emerald-600 dark:text-emerald-400' },
+    { label: 'Firms & Orgs', description: 'Manage partner firms', path: '/firms', icon: Building2, iconBg: 'bg-indigo-50 dark:bg-indigo-950/40', iconColor: 'text-indigo-600 dark:text-indigo-400' },
+    { label: 'All Tasks', description: 'Track assignments', path: '/tasks', icon: CheckSquare, iconBg: 'bg-amber-50 dark:bg-amber-950/40', iconColor: 'text-amber-600 dark:text-amber-400' },
+    { label: 'Services', description: 'Browse service catalog', path: '/services', icon: Layers, iconBg: 'bg-blue-50 dark:bg-blue-950/40', iconColor: 'text-blue-600 dark:text-blue-400' },
+    { label: 'My Profile', description: 'Account & preferences', path: '/profile', icon: Users, iconBg: 'bg-violet-50 dark:bg-violet-950/40', iconColor: 'text-violet-600 dark:text-violet-400' },
+    { label: 'Reports', description: 'Analytics & insights', path: '/dashboard', icon: BarChart2, iconBg: 'bg-rose-50 dark:bg-rose-950/40', iconColor: 'text-rose-600 dark:text-rose-400' },
+  ];
+
   // ── render ─────────────────────────────────────────────────────────────────
+
+  if (isLoading && !stats) {
+    return (
+      <div className="min-h-screen">
+        <DashboardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -173,7 +247,7 @@ const Dashboard = () => {
           </div>
 
           {/* Sub-stats: debit / credit */}
-          <div className="flex gap-4 sm:gap-6">
+          <div className="flex gap-5 sm:gap-8">
             <div className="text-center">
               <p className="text-blue-200 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 justify-center">
                 <TrendingUp size={11} /> Debit
@@ -216,7 +290,7 @@ const Dashboard = () => {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6"
       >
         <StatCard
           label="Total Tasks"
@@ -268,23 +342,23 @@ const Dashboard = () => {
         />
       </motion.div>
 
-      {/* ── Firms + Pending Dept Row ── */}
+      {/* ── Bottom Row: Firms, Pending Dept, Quick Links ── */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-12 gap-4"
       >
-        {/* Firms */}
+        {/* Firms Card */}
         <motion.div
           variants={item}
           onClick={() => navigate('/firms')}
-          className="cursor-pointer bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 hover:-translate-y-0.5 transition-all"
+          className="sm:col-span-3 cursor-pointer bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 hover:-translate-y-0.5 transition-all"
         >
           <div className="flex justify-between items-start mb-3">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Firms</p>
+            <p className="text-gray-500 dark:text-gray-400 text-[11px] font-semibold uppercase tracking-wider">Firms</p>
             <div className="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40">
-              <Building2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
           {isLoading ? (
@@ -292,27 +366,27 @@ const Dashboard = () => {
           ) : (
             <p className="text-3xl font-bold text-gray-900 dark:text-white mb-3 tabular-nums">{totalFirms}</p>
           )}
-          <div className="flex gap-3 text-xs">
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+          <div className="flex gap-4 text-xs">
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
               {activeFirms} Active
             </span>
-            <span className="flex items-center gap-1 text-gray-400 font-semibold">
+            <span className="flex items-center gap-1.5 text-gray-400 font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 inline-block" />
               {inactiveFirms} Inactive
             </span>
           </div>
         </motion.div>
 
-        {/* Pending from Department */}
+        {/* Pending (Dept) Card */}
         <motion.div
           variants={item}
-          className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between"
+          className="sm:col-span-3 bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between"
         >
           <div className="flex justify-between items-start mb-3">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Pending (Dept)</p>
+            <p className="text-gray-500 dark:text-gray-400 text-[11px] font-semibold uppercase tracking-wider">Pending (Dept)</p>
             <div className="p-2.5 rounded-lg bg-violet-50 dark:bg-violet-950/40">
-              <Clock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <Clock className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             </div>
           </div>
           {isLoading ? (
@@ -323,27 +397,26 @@ const Dashboard = () => {
           <p className="mt-2 text-xs text-violet-600 dark:text-violet-400 font-semibold">Awaiting department action</p>
         </motion.div>
 
-        {/* Quick links / navigation placeholder */}
+        {/* Quick Links — 2-col icon card grid */}
         <motion.div
           variants={item}
-          className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-900 p-5 rounded-xl border border-slate-200 dark:border-gray-700 flex flex-col justify-between gap-2"
+          className="sm:col-span-6 bg-gradient-to-br from-slate-50 to-slate-100/60 dark:from-gray-800/60 dark:to-gray-900/60 p-4 rounded-xl border border-slate-200 dark:border-gray-700"
         >
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Quick Links</p>
-          {[
-            { label: 'View Ledger', path: '/ledger', color: 'text-emerald-600 dark:text-emerald-400' },
-            { label: 'Manage Firms', path: '/firms', color: 'text-indigo-600 dark:text-indigo-400' },
-            { label: 'All Tasks', path: '/tasks', color: 'text-amber-600 dark:text-amber-400' },
-          ].map(({ label, path, color }) => (
-            <button
-              key={path}
-              type="button"
-              onClick={() => navigate(path)}
-              className={`flex items-center gap-1.5 text-xs font-semibold ${color} hover:underline text-left`}
-            >
-              <ArrowRight size={12} />
-              {label}
-            </button>
-          ))}
+          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Quick Links</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {quickLinks.map(({ label, description, path, icon, iconBg, iconColor }) => (
+              <QuickLinkCard
+                key={path}
+                label={label}
+                description={description}
+                path={path}
+                icon={icon}
+                iconBg={iconBg}
+                iconColor={iconColor}
+                onClick={() => navigate(path)}
+              />
+            ))}
+          </div>
         </motion.div>
       </motion.div>
 

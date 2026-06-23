@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PageContentSkeleton } from '../components/SkeletonComponent';
 import {
   Receipt, Eye, TrendingUp, TrendingDown, Wallet, ArrowRightLeft, Download,
 } from 'lucide-react';
@@ -440,9 +441,7 @@ export default function Ledger() {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-          </div>
+          <PageContentSkeleton columns={7} rows={8} />
         ) : (
           <>
             {/* Opening balance + transactions table using standard ManagementTable */}

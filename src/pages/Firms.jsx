@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PageContentSkeleton } from '../components/SkeletonComponent';
 import { Building2, Eye, Activity, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
@@ -137,9 +138,7 @@ export default function Firms() {
 
         {
           isLoading ? (
-            <div className="flex justify-center p-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-            </div>
+            <PageContentSkeleton viewMode={viewMode} columns={4} rows={6} />
           ) : firms.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
               <Building className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
