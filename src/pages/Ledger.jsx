@@ -337,7 +337,6 @@ export default function Ledger() {
 
   return (
     <ManagementHub
-      eyebrow="Financial ledger"
       title="Transaction Ledger"
       description="Sales, receipts, payments &amp; journal entries."
       accent="emerald"

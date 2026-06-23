@@ -11,7 +11,15 @@ import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 
 export default function Services() {
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewMode(window.innerWidth < 768 ? 'card' : 'table');
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const navigate = useNavigate();
@@ -114,7 +122,6 @@ export default function Services() {
 
   return (
     <ManagementHub
-      eyebrow="Services Directory"
       title="Services Management"
       description="Manage all your available services, pricing, and categories."
       accent="blue"
@@ -122,7 +129,7 @@ export default function Services() {
       actions={null}
       summary={null}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-2">
 
         <ManagementFilters
           viewMode={viewMode}

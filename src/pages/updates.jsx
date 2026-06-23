@@ -159,13 +159,12 @@ export default function Updates() {
 
   return (
     <ManagementHub
-      eyebrow="Timeline Monitor"
       title="Task Process Updates"
       description="Real-time log of document clearances, audit validations, GST reconciliations, and tax agent actions."
       accent="indigo"
       onRefresh={() => console.log('Refreshing timeline updates...')}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-2">
         <ManagementFilters
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}

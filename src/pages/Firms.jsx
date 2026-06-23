@@ -12,7 +12,15 @@ import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 
 export default function Firms() {
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewMode(window.innerWidth < 768 ? 'card' : 'table');
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const navigate = useNavigate();
@@ -98,7 +106,6 @@ export default function Firms() {
 
   return (
     <ManagementHub
-      eyebrow="Partner Directory"
       title="Firms & Organizations"
       description="Manage partner firms, client organizations, and their details."
       accent="indigo"
@@ -106,7 +113,7 @@ export default function Firms() {
       actions={null}
       summary={null}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      < div className="mt-4 flex flex-col gap-2" >
 
         <ManagementFilters
           viewMode={viewMode}
@@ -128,53 +135,55 @@ export default function Firms() {
           ]}
         />
 
-        {isLoading ? (
-          <div className="flex justify-center p-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-          </div>
-        ) : firms.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
-            <Building className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
-            <p className="text-slate-500 dark:text-slate-400 font-medium">No firms found</p>
-          </div>
-        ) : viewMode === 'table' ? (
-          <ManagementTable
-            columns={tableColumns}
-            rows={firms}
-            rowKey="firm_id"
-            accent="indigo"
-            getActions={getRowActions}
-            activeId={activeMenuId}
-            onToggleAction={(e, id) => setActiveMenuId(id)}
-            onRowClick={(row) => handleViewDetails(row)}
-          />
-        ) : (
-          <ManagementGrid viewMode={viewMode}>
-            {firms.map((firm) => (
-              <ManagementCard
-                key={firm.firm_id}
-                title={firm.firm_name}
-                subtitle={formatType(firm.firm_type)}
-                accent="indigo"
-                icon={<Building2 size={16} />}
-                badge={
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${firm.status ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
-                    {firm.status ? 'Active' : 'Inactive'}
-                  </span>
-                }
-                actions={getRowActions(firm)}
-                menuId={`menu-${firm.firm_id}`}
-                activeId={activeMenuId}
-                onToggle={(e, id) => setActiveMenuId(id)}
-                onClick={() => handleViewDetails(firm)}
-              >
-                <div className="mt-3 flex justify-between items-center text-xs border-t border-slate-100 dark:border-gray-700 pt-2">
-                  <span className="text-slate-500 flex items-center gap-1"><Activity size={12} /> Profile: {firm.status ? 'Active' : 'Disabled'}</span>
-                </div>
-              </ManagementCard>
-            ))}
-          </ManagementGrid>
-        )}
+        {
+          isLoading ? (
+            <div className="flex justify-center p-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+            </div>
+          ) : firms.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
+              <Building className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
+              <p className="text-slate-500 dark:text-slate-400 font-medium">No firms found</p>
+            </div>
+          ) : viewMode === 'table' ? (
+            <ManagementTable
+              columns={tableColumns}
+              rows={firms}
+              rowKey="firm_id"
+              accent="indigo"
+              getActions={getRowActions}
+              activeId={activeMenuId}
+              onToggleAction={(e, id) => setActiveMenuId(id)}
+              onRowClick={(row) => handleViewDetails(row)}
+            />
+          ) : (
+            <ManagementGrid viewMode={viewMode}>
+              {firms.map((firm) => (
+                <ManagementCard
+                  key={firm.firm_id}
+                  title={firm.firm_name}
+                  subtitle={formatType(firm.firm_type)}
+                  accent="indigo"
+                  icon={<Building2 size={16} />}
+                  badge={
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${firm.status ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                      {firm.status ? 'Active' : 'Inactive'}
+                    </span>
+                  }
+                  actions={getRowActions(firm)}
+                  menuId={`menu-${firm.firm_id}`}
+                  activeId={activeMenuId}
+                  onToggle={(e, id) => setActiveMenuId(id)}
+                  onClick={() => handleViewDetails(firm)}
+                >
+                  <div className="mt-3 flex justify-between items-center text-xs border-t border-slate-100 dark:border-gray-700 pt-2">
+                    <span className="text-slate-500 flex items-center gap-1"><Activity size={12} /> Profile: {firm.status ? 'Active' : 'Disabled'}</span>
+                  </div>
+                </ManagementCard>
+              ))}
+            </ManagementGrid>
+          )
+        }
 
         <Pagination
           currentPage={pagination.page}
@@ -183,7 +192,7 @@ export default function Firms() {
           onPageChange={goToPage}
           onLimitChange={changeLimit}
         />
-      </div>
-    </ManagementHub>
+      </div >
+    </ManagementHub >
   );
 }

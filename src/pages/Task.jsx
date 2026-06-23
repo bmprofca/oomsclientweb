@@ -14,7 +14,15 @@ export default function Task() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewMode(window.innerWidth < 768 ? 'card' : 'table');
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
 
@@ -125,7 +133,6 @@ export default function Task() {
 
   return (
     <ManagementHub
-      eyebrow="Task Manager"
       title="Tasks & Assignments"
       description="Track and manage all operational tasks and deadlines."
       accent="amber"
@@ -136,7 +143,7 @@ export default function Task() {
       actions={null}
       summary={null}
     >
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-2">
 
         <ManagementFilters
           viewMode={viewMode}
@@ -188,7 +195,7 @@ export default function Task() {
                 accent="amber"
                 icon={<CheckSquare size={16} />}
                 badge={
-                  <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold ${getStatusColor(task.status)}`}>
+                  <span className={`px-2 py-0.5 whitespace-nowrap rounded-md text-[10px] uppercase font-bold ${getStatusColor(task.status)}`}>
                     {task.status || 'UNKNOWN'}
                   </span>
                 }

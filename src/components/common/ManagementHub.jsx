@@ -29,7 +29,6 @@ const activeButtonStyles = {
 };
 
 export default function ManagementHub({
-  eyebrow,
   title,
   description,
   accent = 'slate',
@@ -60,14 +59,6 @@ export default function ManagementHub({
         >
           <div className="flex flex-col gap-1 md:gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              {eyebrow && (
-                <div className={joinClasses(
-                  'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]',
-                  accentClass
-                )}>
-                  {eyebrow}
-                </div>
-              )}
               {title && <h1 className="mt-1 text-lg font-bold flex-wrap whitespace-nowrap text-slate-900 dark:text-gray-100 md:text-xl">{title}</h1>}
               {description && <p className="mt-0.5 text-xs text-slate-500 dark:text-gray-400">{description}</p>}
             </div>
