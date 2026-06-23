@@ -63,13 +63,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       label: 'Updates',
       path: '/updates',
       roles: ['admin'],
-    },
-    {
-      icon: MessageSquare,
-      label: 'Consultant Chat',
-      path: '/chat',
-      roles: ['admin'],
-    },
+    }
   ];
 
   const menuItems = allMenuItems.filter(item => !item.roles || item.roles.includes(userType));

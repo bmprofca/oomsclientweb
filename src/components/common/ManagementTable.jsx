@@ -13,6 +13,18 @@ function resolveRowKey(row, rowKey, index) {
   return index;
 }
 
+function getAlignClass(column) {
+  const headerClass = column.headerClassName || '';
+  const bodyClass = column.className || '';
+  if (headerClass.includes('text-right') || bodyClass.includes('text-right')) {
+    return 'text-right';
+  }
+  if (headerClass.includes('text-center') || bodyClass.includes('text-center')) {
+    return 'text-center';
+  }
+  return 'text-left';
+}
+
 export default function ManagementTable({
   rows = [],
   columns = [],
@@ -36,6 +48,9 @@ export default function ManagementTable({
   showActionsColumn = true,
   actionsHeader = <FaCog className="ml-auto h-4 w-4" />,
   actionsClassName = '',
+  showSerialNo = true,
+  renderSerialNo = null,
+  responsive = 'slice',
 }) {
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(1024);
@@ -56,16 +71,22 @@ export default function ManagementTable({
   const serialNoColumn = {
     key: '__serialNo__',
     label: 'SN',
-    headerClassName: 'w-14',
+    headerClassName: 'w-14 text-center',
     className: 'w-14 text-center',
-    render: (_, index) => (
-      <span className="font-semibold text-gray-500 dark:text-gray-400">{index + 1}</span>
-    ),
+    render: (row, index) => {
+      if (typeof renderSerialNo === 'function') {
+        return renderSerialNo(row, index);
+      }
+      return (
+        <span className="font-semibold text-gray-500 dark:text-gray-400">{index + 1}</span>
+      );
+    },
   };
 
-  const enhancedColumns = [serialNoColumn, ...allVisibleColumns];
+  const enhancedColumns = showSerialNo ? [serialNoColumn, ...allVisibleColumns] : allVisibleColumns;
 
   const getResponsiveColumns = () => {
+    if (responsive === 'scroll') return enhancedColumns;
     let maxCols = enhancedColumns.length;
     if (containerWidth < 340) maxCols = 1;
     else if (containerWidth < 480) maxCols = 2;
@@ -102,15 +123,19 @@ export default function ManagementTable({
       animate={{ opacity: 1, y: 0 }}
       className={joinClasses('overflow-hidden rounded-md bg-white dark:bg-gray-800 w-full', cardClass, containerClassName, className)}
     >
-      <div className={joinClasses('w-full', tableClassName)}>
-        <table className="w-full table-fixed text-left text-sm text-gray-700 dark:text-gray-300">
+      <div className={joinClasses('w-full', responsive === 'scroll' ? 'overflow-x-auto' : 'overflow-hidden', tableClassName)}>
+        <table className={joinClasses(
+          'w-full text-sm text-gray-700 dark:text-gray-300',
+          responsive === 'scroll' ? 'min-w-[640px] table-auto' : 'table-fixed text-left',
+          tableClassName
+        )}>
           {showHeader && (
             <thead className={joinClasses('bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-800/50 text-xs uppercase text-gray-600 dark:text-gray-400', headerClassName)}>
               <tr>
                 {visibleColumns.map((column) => (
                   <th
                     key={column.key}
-                    className={joinClasses(densityClasses, 'font-semibold text-left', column.headerClassName)}
+                    className={joinClasses(densityClasses, 'font-semibold', getAlignClass(column), column.headerClassName)}
                   >
                     {column.label}
                   </th>

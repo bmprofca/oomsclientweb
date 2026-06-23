@@ -1,13 +1,10 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Receipt, Eye, TrendingUp, TrendingDown, Wallet, ArrowRightLeft,
+  Receipt, Eye, TrendingUp, TrendingDown, Wallet, ArrowRightLeft, Download,
 } from 'lucide-react';
-import { FaTh, FaListUl, FaChevronLeft, FaChevronRight, FaEllipsisV } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
-import ManagementCard from '../components/common/ManagementCard';
-import ManagementGrid from '../components/common/ManagementGrid';
-import ActionMenu from '../components/common/ActionMenu';
 import AdvancedDateFilter from '../components/common/AdvancedDateFilter';
 import SelectField from '../components/common/SelectField';
 import Modal from '../components/common/Modal';
@@ -63,8 +60,8 @@ const PRESETS = [
   },
 ];
 
-const DEFAULT_FROM = `${now.getFullYear()}-01-01`;
-const DEFAULT_TO = toIso(now);
+const DEFAULT_FROM = toIso(new Date(now.getFullYear(), now.getMonth(), 1));
+const DEFAULT_TO = toIso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
 const TYPE_OPTIONS = [
   { value: 'sale', label: 'Sale' },
@@ -83,61 +80,26 @@ function formatLedgerDate(date) {
   const month = String(parsed.getMonth() + 1).padStart(2, '0');
   return `${day}/${month}/${parsed.getFullYear()}`;
 }
-// ── Compact view toggle ───────────────────────────────────────────────────────
-
-function ViewToggle({ viewMode, onChange }) {
-  const btn = (mode, Icon, title) => (
-    <button
-      type="button"
-      title={title}
-      onClick={() => onChange(mode)}
-      className={`p-1.5 rounded-md transition-colors ${viewMode === mode
-        ? 'bg-blue-600 text-white shadow-sm'
-        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-        }`}
-    >
-      <Icon size={13} />
-    </button>
-  );
-  return (
-    <div className="flex items-center gap-0.5 p-0.5 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-      {btn('table', FaListUl, 'Table view')}
-      {btn('card', FaTh, 'Card view')}
-    </div>
-  );
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia('(max-width: 639px)');
-    const update = () => setIsMobile(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-
-  return isMobile;
-}
 
 // ── component ─────────────────────────────────────────────────────────────────
 
 export default function Ledger() {
-  const [viewMode, setViewMode] = useState('table');
-  const isMobile = useIsMobile();
-  const effectiveViewMode = isMobile ? 'card' : viewMode;
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [typeFilter, setTypeFilter] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // dateFilter shape: { from_date, to_date, date, month, year }
+  // defaults to current month
   const [dateFilter, setDateFilter] = useState({
     from_date: DEFAULT_FROM,
     to_date: DEFAULT_TO,
     date: '', month: '', year: '',
   });
+
+  const hasActiveFilters = typeFilter !== null ||
+    dateFilter.from_date !== DEFAULT_FROM ||
+    dateFilter.to_date !== DEFAULT_TO;
 
   const [transactions, setTransactions] = useState([]);
   const [openingBalance, setOpeningBalance] = useState({ debit: 0, credit: 0, balance: 0 });
@@ -145,9 +107,15 @@ export default function Ledger() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Resolved date strings (fall back to defaults when cleared)
+  // Resolved date strings (fall back to current month defaults when cleared)
   const fromDate = dateFilter.from_date || DEFAULT_FROM;
   const toDate = dateFilter.to_date || DEFAULT_TO;
+
+  const clearFilters = () => {
+    setDateFilter({ from_date: DEFAULT_FROM, to_date: DEFAULT_TO, date: '', month: '', year: '' });
+    setTypeFilter(null);
+    goToPage(1);
+  };
 
   // ── fetch ────────────────────────────────────────────────────────────────────
 
@@ -184,6 +152,50 @@ export default function Ledger() {
 
   // ── handlers ──────────────────────────────────────────────────────────────────
 
+  const downloadInvoice = async (row) => {
+    const loadingToast = toast.loading('Generating invoice PDF...');
+    try {
+      const response = await apiCall('/transaction/generate-invoice', 'POST', {
+        invoice_id: row.invoice_id,
+        type: row.transaction_type?.toLowerCase(),
+      });
+      const resData = await response.json();
+      if (response.ok && resData.success && resData.data?.url) {
+        toast.success(resData.message || 'Invoice PDF generated successfully', { id: loadingToast });
+        
+        const fileUrl = resData.data.url;
+        const suggestedName = resData.data.suggested_filename || resData.data.filename || 'invoice.pdf';
+        
+        try {
+          const fileRes = await fetch(fileUrl);
+          const blob = await fileRes.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = suggestedName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        } catch (corsErr) {
+          const link = document.createElement('a');
+          link.href = fileUrl;
+          link.target = '_blank';
+          link.download = suggestedName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } else {
+        toast.error(resData.message || 'Failed to generate invoice PDF', { id: loadingToast });
+      }
+    } catch (err) {
+      console.error('Failed to download invoice:', err);
+      toast.error('Failed to download invoice PDF', { id: loadingToast });
+    }
+  };
+
   const handleViewDetails = (item) => { setSelectedItem(item); setIsModalOpen(true); };
 
   const applyPreset = (preset) => {
@@ -191,34 +203,22 @@ export default function Ledger() {
     goToPage(1);
   };
 
-  /**
-   * Called by AdvancedDateFilter onChange.
-   * When the user clears (from_date / to_date become ""), fall back to defaults
-   * so the API always gets a valid range and the trigger label stays sensible.
-   */
   const handleDateFilterChange = (val) => {
-    const resolved = {
+    setDateFilter({
       ...val,
       from_date: val.from_date || DEFAULT_FROM,
       to_date: val.to_date || DEFAULT_TO,
-    };
-    setDateFilter(resolved);
+    });
     goToPage(1);
   };
 
-  /**
-   * Shift the current date range by N whole months.
-   * from_date -> first day of target month, to_date -> last day of target month.
-   */
   const shiftMonth = (delta) => {
-    const base = new Date(fromDate + 'T00:00:00');
-    const newY = base.getFullYear();
-    const newM = base.getMonth() + delta; // can overflow — Date handles it
-    const first = new Date(newY, newM, 1);
-    const last = new Date(newY, newM + 1, 0);
-    const from = toIso(first);
-    const to = toIso(last);
-    setDateFilter({ from_date: from, to_date: to, date: '', month: '', year: '' });
+    // Anchor to the start of the currently visible from-date month
+    const base = new Date(`${fromDate}T00:00:00`);
+    const newM = base.getMonth() + delta;
+    const first = new Date(base.getFullYear(), newM, 1);
+    const last = new Date(base.getFullYear(), newM + 1, 0);
+    setDateFilter({ from_date: toIso(first), to_date: toIso(last), date: '', month: '', year: '' });
     goToPage(1);
   };
 
@@ -226,68 +226,75 @@ export default function Ledger() {
 
   const tableColumns = [
     {
-      key: 'serial_no',
-      label: 'S.No',
-      headerClassName: 'w-16',
-      className: 'w-16 text-center',
-      render: (row, index) => (
-        <span className="font-semibold text-slate-500 dark:text-slate-400">
-          {row.isOpeningBalance ? '-' : index}
-        </span>
-      ),
-    },
-    {
       key: 'transaction_date',
       label: 'Date',
+      headerClassName: 'w-[140px]',
+      className: 'w-[140px]',
       render: (row) => (
         row.isOpeningBalance
-          ? <span className="font-bold text-slate-900 dark:text-gray-100">Opening Balance</span>
-          : <span className="text-slate-600 dark:text-slate-400">{formatLedgerDate(row.transaction_date)}</span>
+          ? <span className="font-bold text-amber-800 dark:text-amber-400">Opening Balance</span>
+          : <span className="text-slate-600 dark:text-slate-400 font-medium">{formatLedgerDate(row.transaction_date)}</span>
       ),
     },
     {
       key: 'invoice_no',
       label: 'Invoice No.',
+      headerClassName: 'w-[120px]',
+      className: 'w-[120px]',
       render: (row) => (
         <span className="font-bold text-slate-800 dark:text-gray-100">
-          {row.isOpeningBalance ? '' : row.invoice_no}
+          {row.isOpeningBalance ? '' : (row.invoice_no || '—')}
         </span>
       ),
     },
     {
       key: 'transaction_type',
       label: 'Type',
+      headerClassName: 'w-[95px]',
+      className: 'w-[95px]',
       render: (row) => {
         if (row.isOpeningBalance) return null;
         const cfg = getTypeConfig(row.transaction_type);
-        return <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</span>;
+        return <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider font-bold ${cfg.color}`}>{cfg.label}</span>;
       },
     },
     {
       key: 'debit',
-      label: 'Debit (₹)',
-      render: (row) => (
-        <span className={`font-medium tabular-nums ${row.payment?.debit ? 'text-blue-700 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
-          {row.payment?.debit ? formatAmount(row.payment.debit) : '—'}
-        </span>
-      ),
+      label: 'Debit',
+      headerClassName: 'w-[125px] text-right',
+      className: 'w-[125px] text-right',
+      render: (row) => {
+        const val = row.payment?.debit;
+        return (
+          <span className={`font-semibold tabular-nums ${val ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
+            {val ? formatAmount(val) : '—'}
+          </span>
+        );
+      },
     },
     {
       key: 'credit',
-      label: 'Credit (₹)',
-      render: (row) => (
-        <span className={`font-medium tabular-nums ${row.payment?.credit ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
-          {row.payment?.credit ? formatAmount(row.payment.credit) : '—'}
-        </span>
-      ),
+      label: 'Credit',
+      headerClassName: 'w-[125px] text-right',
+      className: 'w-[125px] text-right',
+      render: (row) => {
+        const val = row.payment?.credit;
+        return (
+          <span className={`font-semibold tabular-nums ${val ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
+            {val ? formatAmount(val) : '—'}
+          </span>
+        );
+      },
     },
     {
       key: 'balance',
-      label: 'Balance (₹)',
+      label: 'Balance',
+      headerClassName: 'w-[135px] text-right pr-4 lg:pr-6',
+      className: 'w-[135px] text-right pr-4 lg:pr-6',
       render: (row) => {
         const bal = row.payment?.balance ?? 0;
         return (
-          <span className={`font-bold tabular-nums ${bal >= 0 ? 'text-slate-800 dark:text-gray-100' : 'text-red-600 dark:text-red-400'}`}>
+          <span className={`font-bold tabular-nums ${bal >= 0 ? 'text-slate-800 dark:text-gray-100' : 'text-rose-600 dark:text-rose-400'}`}>
             {formatAmount(bal)}
           </span>
         );
@@ -307,9 +314,23 @@ export default function Ledger() {
     },
     ...transactions,
   ];
-  const getRowActions = (row) => row.isOpeningBalance ? [] : [
-    { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
-  ];
+
+  const getRowActions = (row) => {
+    if (row.isOpeningBalance) return [];
+    const actions = [
+      { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
+    ];
+    if (row.invoice_id) {
+      actions.push({
+        id: 'download',
+        label: 'Download Invoice',
+        icon: <Download size={14} />,
+        color: 'blue',
+        onClick: () => downloadInvoice(row),
+      });
+    }
+    return actions;
+  };
 
   // ── render ────────────────────────────────────────────────────────────────────
 
@@ -324,182 +345,148 @@ export default function Ledger() {
       refreshLabel="Refresh"
       refreshTitle="Refresh ledger"
     >
-      {/* ── Controls bar ───────────────────────────────────────────────────── */}
-      <div className="mb-3 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 px-3 py-2.5 shadow-sm">
+      <div className="mt-4 flex flex-col gap-4">
+        {/* Unified Filters Bar */}
+        <div className="bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-md border border-slate-200 dark:border-gray-700 flex flex-col lg:flex-row gap-3 lg:items-center justify-between shadow-sm">
+          <div className="flex flex-col sm:flex-row flex-1 gap-2 sm:gap-3 w-full lg:w-auto items-stretch sm:items-center">
+            
+            {/* Date Shifter Input Group */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <button
+                type="button"
+                title="Previous month"
+                onClick={() => shiftMonth(-1)}
+                className="p-2 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
+              >
+                <FaChevronLeft size={10} />
+              </button>
+              
+              <div className="flex-1 sm:flex-none min-w-[200px]">
+                <AdvancedDateFilter
+                  value={dateFilter}
+                  onChange={handleDateFilterChange}
+                  placeholder="Date range…"
+                  tabOptions={['range']}
+                  buttonClassName="rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 px-3 py-2 text-slate-700 dark:text-gray-200 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors w-full text-xs sm:text-sm font-medium shadow-none"
+                />
+              </div>
 
-        {/* Single row: [‹] [date picker] [›] · presets · | · type · view · refresh */}
-        <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                title="Next month"
+                onClick={() => shiftMonth(1)}
+                className="p-2 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
+              >
+                <FaChevronRight size={10} />
+              </button>
+            </div>
 
-          {/* ← Prev month */}
-          <button
-            type="button"
-            title="Previous month"
-            onClick={() => shiftMonth(-1)}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
-          >
-            <FaChevronLeft size={11} />
-          </button>
+            {/* Presets List */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+              {PRESETS.map((preset) => {
+                const active = dateFilter.from_date === preset.from && dateFilter.to_date === preset.to;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => applyPreset(preset)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-all whitespace-nowrap ${active
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-400'
+                      }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Calendar range picker */}
-          <div className="shrink-0" style={{ minWidth: 195, maxWidth: 270 }}>
-            <AdvancedDateFilter
-              value={dateFilter}
-              onChange={handleDateFilterChange}
-              placeholder="Date range…"
-              tabOptions={['range']}
-              buttonClassName="rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 px-2.5 py-1.5 text-slate-700 dark:text-gray-200 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors w-full text-xs"
-            />
-          </div>
+            <div className="hidden xl:block h-6 w-px bg-slate-200 dark:bg-gray-700 mx-1" />
 
-          {/* → Next month */}
-          <button
-            type="button"
-            title="Next month"
-            onClick={() => shiftMonth(1)}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shrink-0"
-          >
-            <FaChevronRight size={11} />
-          </button>
+            {/* Transaction Type Filter */}
+            <div className="w-full sm:w-auto min-w-[150px]">
+              <SelectField
+                value={typeFilter}
+                onChange={(val) => { setTypeFilter(val); goToPage(1); }}
+                options={TYPE_OPTIONS}
+                placeholder="All types"
+                isClearable
+              />
+            </div>
 
-          {/* Preset chips */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {PRESETS.map((preset) => {
-              const active = dateFilter.from_date === preset.from && dateFilter.to_date === preset.to;
-              return (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() => applyPreset(preset)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all whitespace-nowrap ${active
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                    : 'bg-white dark:bg-gray-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-400'
-                    }`}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Visual divider */}
-          <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-gray-700 mx-0.5" />
-
-          {/* Type filter */}
-          <div className="min-w-[140px] flex-1 sm:flex-none">
-            <SelectField
-              value={typeFilter}
-              onChange={(val) => { setTypeFilter(val); goToPage(1); }}
-              options={TYPE_OPTIONS}
-              placeholder="All types"
-              isClearable
-            />
-          </div>
-
-          {/* View toggle */}
-          <div className="ml-auto hidden items-center justify-end gap-2 sm:flex">
-            <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+            {/* Clear Filters Indicator */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="w-full sm:w-auto shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors whitespace-nowrap text-center"
+              >
+                ✕ Clear Filters
+              </button>
+            )}
           </div>
         </div>
 
         {/* Active range hint */}
         {(dateFilter.from_date && dateFilter.to_date) && (
-          <p className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500 leading-none">
-            Showing: <span className="font-medium text-slate-500 dark:text-slate-400">{formatLedgerDate(dateFilter.from_date)}</span>
-            {' – '}
-            <span className="font-medium text-slate-500 dark:text-slate-400">{formatLedgerDate(dateFilter.to_date)}</span>
+          <p className="text-xs text-slate-400 dark:text-slate-500 leading-none px-1 -mt-2">
+            Showing transactions from <span className="font-semibold text-slate-600 dark:text-slate-300">{formatLedgerDate(dateFilter.from_date)}</span> to <span className="font-semibold text-slate-600 dark:text-slate-300">{formatLedgerDate(dateFilter.to_date)}</span>
             {pagination.total > 0 && (
-              <span className="ml-2 text-slate-300 dark:text-slate-600">
-                · {pagination.total} transaction{pagination.total !== 1 ? 's' : ''}
+              <span className="ml-1.5 text-slate-300 dark:text-slate-600">
+                • {pagination.total} transaction{pagination.total !== 1 ? 's' : ''}
               </span>
             )}
           </p>
         )}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
+          </div>
+        ) : (
+          <>
+            {/* Opening balance + transactions table using standard ManagementTable */}
+            <ManagementTable
+              columns={tableColumns}
+              rows={ledgerRows}
+              rowKey="transaction_id"
+              accent="emerald"
+              compact={false}
+              responsive="scroll"
+              showSerialNo={true}
+              renderSerialNo={(row, index) => {
+                if (row.isOpeningBalance) return '';
+                return <span className="font-semibold text-slate-500 dark:text-slate-400">{index}</span>;
+              }}
+              getActions={getRowActions}
+              activeId={activeMenuId}
+              onToggleAction={(e, id) => setActiveMenuId(id)}
+              rowClassName={(row) => row.isOpeningBalance ? 'bg-amber-50/40 dark:bg-amber-950/10 hover:bg-amber-50/50 dark:hover:bg-amber-950/20' : ''}
+              onRowClick={(row) => !row.isOpeningBalance && handleViewDetails(row)}
+            />
+
+            {/* Empty state when no transactions (opening balance row still shows above) */}
+            {transactions.length === 0 && (
+              <div className="mt-3 bg-white dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700 p-8 text-center flex flex-col items-center justify-center shadow-sm">
+                <ArrowRightLeft className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">No transactions found for this period</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Adjust date filters or clear the type filter to see results.</p>
+              </div>
+            )}
+
+            {/* Pagination — only show when there are actual transactions */}
+            {pagination.total > 0 && (
+              <Pagination
+                currentPage={pagination.page}
+                totalItems={pagination.total}
+                itemsPerPage={pagination.limit}
+                onPageChange={goToPage}
+                onLimitChange={changeLimit}
+              />
+            )}
+          </>
+        )}
       </div>
-
-      {/* ── Table / Grid / Loading / Empty ─────────────────────────────────── */}
-      {isLoading ? (
-        <div className="flex justify-center items-center py-16">
-          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-emerald-500" />
-        </div>
-      ) : effectiveViewMode !== 'table' && transactions.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 py-10 text-center flex flex-col items-center">
-          <ArrowRightLeft className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No transactions in this period</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Adjust the date range or clear the type filter</p>
-        </div>
-      ) : effectiveViewMode === 'table' ? (
-        <ManagementTable
-          columns={tableColumns}
-          rows={ledgerRows}
-          rowKey="transaction_id"
-          accent="emerald"
-          compact
-          getActions={getRowActions}
-          activeId={activeMenuId}
-          onToggleAction={(e, id) => setActiveMenuId(id)}
-          rowClassName={(row) => row.isOpeningBalance ? 'bg-amber-50/70 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/20' : ''}
-          onRowClick={(row) => !row.isOpeningBalance && handleViewDetails(row)}
-        />
-      ) : (
-        <ManagementGrid viewMode={effectiveViewMode}>
-          {transactions.map((txn) => {
-            const cfg = getTypeConfig(txn.transaction_type);
-            return (
-              <ManagementCard
-                key={txn.transaction_id}
-                title={txn.invoice_no}
-                subtitle={formatLedgerDate(txn.transaction_date)}
-                accent="emerald"
-                icon={<Receipt size={15} />}
-                badge={
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${cfg.color}`}>
-                    {cfg.label}
-                  </span>
-                }
-                headerAction={
-                  <ActionMenu
-                    menuId={`menu-${txn.transaction_id}`}
-                    activeId={activeMenuId}
-                    onToggle={(e, id) => setActiveMenuId(id)}
-                    actions={getRowActions(txn)}
-                    trigger={(
-                      <button
-                        type="button"
-                        title="Actions"
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400"
-                      >
-                        <FaEllipsisV size={12} />
-                      </button>
-                    )}
-                  />
-                }
-                onClick={() => handleViewDetails(txn)}
-              >
-                <div className="mt-2 grid grid-cols-3 gap-1 text-xs border-t border-slate-100 dark:border-gray-700 pt-1.5">
-                  {[
-                    { lbl: 'Debit', val: txn.payment?.debit ? formatAmount(txn.payment.debit) : '—', cls: 'text-blue-700 dark:text-blue-400' },
-                    { lbl: 'Credit', val: txn.payment?.credit ? formatAmount(txn.payment.credit) : '—', cls: 'text-emerald-700 dark:text-emerald-400' },
-                    { lbl: 'Balance', val: formatAmount(txn.payment?.balance ?? 0), cls: (txn.payment?.balance ?? 0) >= 0 ? 'text-slate-700 dark:text-gray-200' : 'text-red-600 dark:text-red-400' },
-                  ].map(({ lbl, val, cls }) => (
-                    <div key={lbl}>
-                      <p className="text-[9px] text-slate-400 uppercase tracking-wider">{lbl}</p>
-                      <p className={`font-bold tabular-nums text-[11px] ${cls}`}>{val}</p>
-                    </div>
-                  ))}
-                </div>
-              </ManagementCard>
-            );
-          })}
-        </ManagementGrid>
-      )}
-
-      <Pagination
-        currentPage={pagination.page}
-        totalItems={pagination.total}
-        itemsPerPage={pagination.limit}
-        onPageChange={goToPage}
-        onLimitChange={changeLimit}
-      />
 
       {/* ── Modal ───────────────────────────────────────────────────────────── */}
       <Modal
@@ -517,7 +504,7 @@ export default function Ledger() {
             <div className="flex justify-between items-start pb-3 border-b border-gray-100 dark:border-gray-700">
               <div>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Invoice</p>
-                <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{selectedItem.invoice_no}</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{selectedItem.invoice_no || '—'}</p>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5 break-all">{selectedItem.transaction_id}</p>
               </div>
               <span className={`shrink-0 ml-3 mt-0.5 px-2.5 py-1 rounded-md text-xs font-bold ${getTypeConfig(selectedItem.transaction_type).color}`}>
@@ -533,7 +520,7 @@ export default function Ledger() {
               </div>
               <div>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Invoice ID</p>
-                <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 break-all">{selectedItem.invoice_id}</p>
+                <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 break-all">{selectedItem.invoice_id || '—'}</p>
               </div>
             </div>
 
@@ -542,7 +529,7 @@ export default function Ledger() {
               {[
                 { icon: <TrendingUp size={12} className="text-blue-500" />, label: 'Debit', val: formatAmount(selectedItem.payment?.debit ?? 0), cls: 'text-blue-700 dark:text-blue-400 font-semibold' },
                 { icon: <TrendingDown size={12} className="text-emerald-500" />, label: 'Credit', val: formatAmount(selectedItem.payment?.credit ?? 0), cls: 'text-emerald-700 dark:text-emerald-400 font-semibold' },
-                { icon: <Wallet size={12} className="text-amber-500" />, label: 'Running Balance', val: formatAmount(selectedItem.payment?.balance ?? 0), cls: `font-extrabold ${(selectedItem.payment?.balance ?? 0) >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-600 dark:text-red-400'}` },
+                { icon: <Wallet size={12} className="text-amber-500" />, label: 'Running Balance', val: formatAmount(selectedItem.payment?.balance ?? 0), cls: `font-extrabold ${(selectedItem.payment?.balance ?? 0) >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'}` },
               ].map(({ icon, label, val, cls }) => (
                 <div key={label} className="flex justify-between items-center px-3 py-2">
                   <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">{icon} {label}</span>
@@ -550,6 +537,19 @@ export default function Ledger() {
                 </div>
               ))}
             </div>
+
+            {selectedItem.invoice_id && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => downloadInvoice(selectedItem)}
+                  className="w-full flex items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 shadow-sm transition-colors text-sm"
+                >
+                  <Download size={15} />
+                  Download Invoice PDF
+                </button>
+              </div>
+            )}
           </div>
         )}
       </Modal>

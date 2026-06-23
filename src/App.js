@@ -16,7 +16,6 @@ import Firms from "./pages/Firms";
 import Documents from "./pages/Documents";
 import Ledger from "./pages/Ledger";
 import Updates from "./pages/updates";
-import Chat from "./pages/Chat";
 import TaskDetails from "./pages/TaskDetails";
 import FirmDetails from "./pages/FirmDetails";
 import ServiceDetails from "./pages/ServiceDetails";
@@ -52,7 +51,6 @@ function App() {
               <Route path="/documents" element={<Documents />} />
               <Route path="/ledger" element={<Ledger />} />
                 <Route path="/updates" element={<Updates />} />
-                <Route path="/chat" element={<Chat />} />
               </Route>
             </Route>
 
