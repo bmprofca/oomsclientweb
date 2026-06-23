@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   Receipt, Eye, TrendingUp, TrendingDown, Wallet, ArrowRightLeft, Download,
 } from 'lucide-react';
@@ -9,7 +9,6 @@ import AdvancedDateFilter from '../components/common/AdvancedDateFilter';
 import SelectField from '../components/common/SelectField';
 import Modal from '../components/common/Modal';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
-import RefreshButton from '../components/common/RefreshButton';
 import { formatAmount } from '../utils/helpers';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
@@ -425,18 +424,6 @@ export default function Ledger() {
                 ✕ Clear Filters
               </button>
             )}
-          </div>
-
-          {/* Right side controls (Refresh button) */}
-          <div className="flex items-center justify-end w-full lg:w-auto border-t lg:border-t-0 border-slate-100 dark:border-gray-700 pt-2 lg:pt-0 shrink-0">
-            <RefreshButton
-              loading={refreshing}
-              onClick={() => fetchTransactions(true)}
-              title="Refresh ledger"
-              className="!relative !top-0 py-2 px-4 text-xs font-semibold"
-            >
-              Refresh
-            </RefreshButton>
           </div>
         </div>
 
