@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import ProfileSelectionModal from '../ProfileSelectionModal';
 
 const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -110,6 +111,7 @@ const MainLayout = ({ children }) => {
           </div>
         </main>
       </div> 
+      <ProfileSelectionModal />
     </div>
   );
 };

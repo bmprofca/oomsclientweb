@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { apiCall } from '../utils/apiCall';
 
 const GRID_SIZE = 40;
 
@@ -26,7 +29,7 @@ function GridBackground() {
 function StepDots({ step }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
-      {[1, 2].map((s) => (
+      {[1, 2, 3].map((s) => (
         <React.Fragment key={s}>
           <div
             style={{
@@ -46,13 +49,13 @@ function StepDots({ step }) {
           >
             {step > s ? '✓' : s}
           </div>
-          {s < 2 && (
+          {s < 3 && (
             <div style={{ flex: 1, height: 2, borderRadius: 1, background: '#e2e8f0', position: 'relative', overflow: 'hidden' }}>
               <div
                 style={{
                   position: 'absolute', inset: 0,
                   background: '#0f172a',
-                  transform: step > 1 ? 'scaleX(1)' : 'scaleX(0)',
+                  transform: step > s ? 'scaleX(1)' : 'scaleX(0)',
                   transformOrigin: 'left',
                   transition: 'transform 0.5s ease',
                 }}
@@ -61,8 +64,8 @@ function StepDots({ step }) {
           )}
         </React.Fragment>
       ))}
-      <span style={{ marginLeft: 8, fontSize: 12, color: '#94a3b8', letterSpacing: '0.05em' }}>
-        {step === 1 ? 'Identify' : 'Verify'}
+      <span style={{ marginLeft: 8, fontSize: 12, color: '#94a3b8', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+        {step === 1 ? 'Identify' : step === 2 ? 'Verify' : 'Select Profile'}
       </span>
     </div>
   );
@@ -102,7 +105,7 @@ function Input({ id, label, value, onChange, placeholder, type = 'text', disable
           outline: 'none',
           transition: 'border-color 0.2s',
           boxSizing: 'border-box',
-          letterSpacing: type === 'text' && id === 'pan' ? '0.1em' : id === 'otp' ? '0.3em' : 'normal',
+          letterSpacing: id === 'otp' ? '0.3em' : 'normal',
         }}
       />
       {hint && (
@@ -175,18 +178,23 @@ function ErrorBanner({ message }) {
 
 // Left panel info data
 const FEATURES = [
-  { icon: '⬡', title: 'PAN-based identity', desc: 'Your permanent account number acts as your unique key — no username to remember.' },
+  { icon: '📱', title: 'Mobile-based identity', desc: 'Your mobile number acts as your unique key — no username to remember.' },
   { icon: '◈', title: 'OTP verification', desc: 'A one-time code is sent to your registered mobile for every login.' },
   { icon: '◉', title: 'Zero stored passwords', desc: 'We never store credentials — each session is independently verified.' },
 ];
 
 export default function Login() {
+  const { login } = useAuth();
   const [step, setStep] = useState(1);
-  const [panNumber, setPanNumber] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [countryCode, setCountryCode] = useState('91');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [panSent, setPanSent] = useState('');
+  const [mobileSent, setMobileSent] = useState('');
+  
+  const [tempToken, setTempToken] = useState('');
+  const [profiles, setProfiles] = useState([]);
 
   // Animate feature cards sequentially on mount
   const [visibleFeature, setVisibleFeature] = useState(0);
@@ -198,29 +206,73 @@ export default function Login() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
-    const panRegex = /^[A-Z0-9]{10}$/i;
-    if (!panRegex.test(panNumber)) {
-      setError('Enter a valid 10-character PAN number (e.g. ABCDE1234F).');
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!mobileRegex.test(mobile)) {
+      setError('Enter a valid 10-digit mobile number.');
       return;
     }
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setPanSent(panNumber);
-    setStep(2);
-    setIsSubmitting(false);
+    try {
+      const response = await apiCall('/auth/login/send-otp', 'POST', { country_code: countryCode, mobile });
+      const data = await response.json();
+      if (response.ok && data.success !== false) { // Assuming success=true or ok implies success
+        setMobileSent(mobile);
+        setStep(2);
+      } else {
+        setError(data.message || 'Failed to send OTP.');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
     if (otp.length < 4) {
-      setError('Enter the 6-digit OTP sent to your registered mobile.');
+      setError('Enter the OTP sent to your registered mobile.');
       return;
     }
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setIsSubmitting(false);
-    alert('Login successful! Redirecting to dashboard...');
+    try {
+      const response = await apiCall('/auth/login', 'POST', { country_code: countryCode, mobile: mobileSent, otp });
+      const data = await response.json();
+      if (response.ok && data.success !== false && data.token) {
+        setTempToken(data.token);
+        
+        // Temporarily store token to allow apiCall to attach it to the header
+        localStorage.setItem('ooms_user_data', JSON.stringify({ token: data.token }));
+        
+        // Fetch profiles
+        const profileRes = await apiCall('/profile/list', 'GET');
+        const profileData = await profileRes.json();
+        
+        if (profileRes.ok && profileData.success !== false && profileData.data && profileData.data.length > 0) {
+          if (profileData.data.length === 1) {
+            login(data.token, profileData.data[0]);
+          } else {
+            setProfiles(profileData.data);
+            setStep(3);
+          }
+        } else {
+          setError('No profiles found for this user.');
+          localStorage.removeItem('ooms_user_data');
+        }
+      } else {
+        setError(data.message || 'Invalid OTP.');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+      localStorage.removeItem('ooms_user_data');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleProfileSelect = (profile) => {
+    login(tempToken, profile);
   };
 
   return (
@@ -294,7 +346,7 @@ export default function Login() {
             Secure access,<br />simplified.
           </h1>
           <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, margin: '0 0 48px' }}>
-            Organisation Operations Management System uses your PAN as your identity — no passwords, no friction.
+            Organisation Operations Management System uses your Mobile Number as your identity — no passwords, no friction.
           </p>
 
           {/* feature cards */}
@@ -373,12 +425,12 @@ export default function Login() {
           {/* card header */}
           <div style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
-              {step === 1 ? 'Enter your PAN' : 'Check your phone'}
+              {step === 1 ? 'Enter your Mobile' : step === 2 ? 'Check your phone' : 'Select a Profile'}
             </h2>
             <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
               {step === 1
                 ? "We'll send a one-time code to your registered mobile."
-                : `Code sent to the number linked with ${panSent}.`}
+                : step === 2 ? `Code sent to +${countryCode} ${mobileSent}.` : 'Choose the profile you want to access.'}
             </p>
           </div>
 
@@ -389,17 +441,32 @@ export default function Login() {
           {step === 1 && (
             <form onSubmit={handleSendOtp} key="step1" style={{ animation: 'slideIn 0.3s ease' }}>
               <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }`}</style>
-              <Input
-                id="pan"
-                label="PAN Number"
-                value={panNumber}
-                onChange={e => setPanNumber(e.target.value.toUpperCase())}
-                placeholder="ABCDE1234F"
-                disabled={isSubmitting}
-                hint="10 characters — 5 letters, 4 digits, 1 letter"
-                autoComplete="off"
-              />
-              <SubmitButton label="Send OTP →" loading={isSubmitting} disabled={!panNumber} />
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ width: '80px' }}>
+                  <Input
+                    id="countryCode"
+                    label="Code"
+                    value={`+${countryCode}`}
+                    onChange={(e) => setCountryCode(e.target.value.replace(/\D/g, ''))}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Input
+                    id="mobile"
+                    label="Mobile Number"
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter 10 digit number"
+                    disabled={isSubmitting}
+                    maxLength={10}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+              
+              <SubmitButton label="Send OTP →" loading={isSubmitting} disabled={mobile.length !== 10 || !countryCode} />
             </form>
           )}
 
@@ -426,10 +493,12 @@ export default function Login() {
                   onClick={() => { setStep(1); setError(''); setOtp(''); }}
                   style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
                 >
-                  ← Change PAN
+                  ← Change Mobile
                 </button>
                 <button
                   type="button"
+                  onClick={handleSendOtp}
+                  disabled={isSubmitting}
                   style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
                 >
                   Resend code
@@ -438,6 +507,46 @@ export default function Login() {
 
               <SubmitButton label="Verify & sign in" loading={isSubmitting} disabled={otp.length < 4} />
             </form>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <div key="step3" style={{ animation: 'slideIn 0.3s ease' }}>
+              <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }`}</style>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '300px', overflowY: 'auto' }}>
+                {profiles.map((profile, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleProfileSelect(profile)}
+                    style={{
+                      padding: '14px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#0f172a'; e.currentTarget.style.background = '#f8fafc'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{profile.name}</span>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>Branch: {profile.branch?.name || 'N/A'}</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{profile.email}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => { setStep(1); setError(''); localStorage.removeItem('ooms_user_data'); }}
+                  style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Footer note */}

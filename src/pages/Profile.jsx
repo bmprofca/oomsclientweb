@@ -5,21 +5,36 @@ import {
 } from 'lucide-react';
 import ManagementHub from '../components/common/ManagementHub';
 import { uploadFile, apiCall } from '../utils/apiCall';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Profile() {
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'edit'
+  const [activeTab, setActiveTab] = useState('overview');
   const fileInputRef = useRef(null);
   const [savedMessage, setSavedMessage] = useState(false);
 
+  const { userData } = useAuth();
+
   const [profile, setProfile] = useState({
-    name: 'Admin User',
-    email: 'admin@oomsadmin.com',
-    role: 'Administrator',
-    address: '123 Business Avenue, Tech District, Mumbai, Maharashtra 400001',
-    contact: '+91 98765 43210',
-    gstNumber: '',
-    profileImage: null,
+    name: userData?.name || 'User',
+    email: userData?.email || '',
+    role: userData?.branch?.name || 'User',
+    address: userData?.address || '',
+    contact: userData?.contact || userData?.mobile || '',
+    gstNumber: userData?.gstNumber || '',
+    profileImage: userData?.profileImage || null,
   });
+
+  useEffect(() => {
+    if (userData) {
+      setProfile(prev => ({
+        ...prev,
+        name: userData.name || prev.name,
+        email: userData.email || prev.email,
+        role: userData.branch?.name || prev.role,
+        contact: userData.contact || userData.mobile || prev.contact,
+      }));
+    }
+  }, [userData]);
 
   const [editForm, setEditForm] = useState({ ...profile });
   const [selectedImageFile, setSelectedImageFile] = useState(null);

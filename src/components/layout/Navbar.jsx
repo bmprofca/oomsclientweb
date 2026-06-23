@@ -9,9 +9,11 @@ import {
   LogOut,
   Sun,
   Moon,
+  Users
 } from 'lucide-react';
 
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar = ({
   toggleSidebar,
@@ -22,9 +24,10 @@ const Navbar = ({
   const [openDropdown, setOpenDropdown] = useState(false);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { userData, logout, openProfileModal } = useAuth();
 
   const handleLogout = async () => {
-    navigate('/login');
+    logout();
   };
 
   const isSidebarOpen = isMobile ? sidebarOpen : isDesktopSidebarExpanded;
@@ -64,6 +67,19 @@ const Navbar = ({
 
             {/* Right section */}
             <div className="flex items-center space-x-2">
+              {/* Desktop Switch Profile Button */}
+              <button
+                onClick={openProfileModal}
+                className="hidden md:flex items-center gap-2 px-3 h-10 rounded-xl transition-all duration-300 group focus:outline-none
+                  bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/40
+                  text-indigo-600 dark:text-indigo-400 font-medium text-sm
+                  border border-indigo-100 dark:border-indigo-800/50"
+                aria-label="Switch Profile"
+              >
+                <Users className="w-4 h-4" />
+                Switch Profile
+              </button>
+
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
@@ -91,18 +107,20 @@ const Navbar = ({
                   {/* Avatar */}
                   <div className="relative">
                     <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center shadow-md bg-gradient-to-br from-blue-500 to-indigo-600">
-                      <span className="text-white font-bold text-sm">A</span>
+                      <span className="text-white font-bold text-sm">
+                        {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                      </span>
                     </div>
                     {/* Online dot */}
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-white dark:border-gray-900 rounded-full"></div>
                   </div>
 
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                      Admin User
+                  <div className="hidden md:block text-left max-w-[120px]">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                      {userData?.name || 'User'}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                      Administrator
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {userData?.branch?.name || userData?.email || 'No Branch'}
                     </p>
                   </div>
 
@@ -117,13 +135,23 @@ const Navbar = ({
                       {/* Mobile user info */}
                       <div className="md:hidden p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                          <span className="text-white font-bold">A</span>
+                          <span className="text-white font-bold">
+                            {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                          </span>
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-800 dark:text-gray-100">Admin User</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">Administrator</p>
+                        <div className="overflow-hidden">
+                          <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">{userData?.name || 'User'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{userData?.branch?.name || userData?.email || 'No Branch'}</p>
                         </div>
                       </div>
+
+                      <button
+                        onClick={() => { setOpenDropdown(false); openProfileModal(); }}
+                        className="md:hidden w-full text-left px-4 py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center gap-3"
+                      >
+                        <Users className="w-4 h-4" />
+                        Switch Profile
+                      </button>
 
                       <button
                         onClick={() => { setOpenDropdown(false); navigate('/profile'); }}

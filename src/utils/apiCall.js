@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 
-const API_BASE = process.env.NODE_ENV === 'production' ? "https://server.finfiler.com" : "http://localhost:8373";
+const API_BASE = "https://api.ooms.in/client";
 
 /**
  * Unified API calling utility
@@ -10,7 +10,7 @@ const API_BASE = process.env.NODE_ENV === 'production' ? "https://server.finfile
  * @returns {Promise<Response>} - The fetch response object
  */
 export const apiCall = async (endpoint, method = 'GET', body = null) => {
-  const userDataStr = localStorage.getItem('user_data');
+  const userDataStr = localStorage.getItem('ooms_user_data');
   let token = null;
   let username = null;
   if (userDataStr) {
@@ -19,7 +19,7 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
       token = userData.token;
       username = userData.username;
     } catch (e) {
-      console.error("Failed to parse user_data from local storage", e);
+      console.error("Failed to parse ooms_user_data from local storage", e);
     }
   }
 
@@ -32,6 +32,7 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
   // Send token as Authorization Bearer header
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    headers['token'] = token;
   }
 
   if (username) {
@@ -59,7 +60,7 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
 
     // Global 401 Unauthorized handler
     if (response.status === 401) {
-      localStorage.removeItem('user_data');
+      localStorage.removeItem('ooms_user_data');
 
       // Redirect to login page if not already there
       if (window.location.pathname !== '/login') {

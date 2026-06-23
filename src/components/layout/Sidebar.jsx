@@ -89,19 +89,6 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
           overflow-y-auto overflow-x-hidden shadow-2xl dark:shadow-gray-950/50
         `}>
           <div className="p-4">
-            {/* User Profile Section */}
-            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                  A
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-100">Admin User</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">admin@oomsadmin.com</p>
-                </div>
-              </div>
-            </div>
-
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const isActive = isActiveRoute(item.path);

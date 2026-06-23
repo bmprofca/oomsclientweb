@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 import MainLayout from "./components/layout/MainLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import ServerUnreachable from "./pages/ServerUnreachable";
 import Login from "./pages/Login";
@@ -20,8 +22,9 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <ToastProvider>
-          <Routes>
+        <AuthProvider>
+          <ToastProvider>
+            <Routes>
             {/* Redirect Root to Login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -30,9 +33,10 @@ function App() {
             {/* Server Unreachable Route */}
             <Route path="/server-error" element={<ServerUnreachable />} />
 
-            {/* Routes with MainLayout */}
-            <Route element={<MainLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+            {/* Routes with MainLayout protected by auth */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
               <Route path="/tasks" element={<Task />} />
               <Route path="/tasks/ongoing" element={<Task />} />
@@ -41,8 +45,9 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/firms" element={<Firms />} />
               <Route path="/ledger" element={<Ledger />} />
-              <Route path="/updates" element={<Updates />} />
-              <Route path="/chat" element={<Chat />} />
+                <Route path="/updates" element={<Updates />} />
+                <Route path="/chat" element={<Chat />} />
+              </Route>
             </Route>
 
             {/* 404 Not Found Route */}
@@ -50,8 +55,9 @@ function App() {
 
             {/* Catch all route - redirect to 404 */}
             <Route path="*" element={<Navigate to="/404" replace />} />
-          </Routes>
-        </ToastProvider>
+            </Routes>
+          </ToastProvider>
+        </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
   );
