@@ -17,6 +17,8 @@ import Firms from "./pages/Firms";
 import Ledger from "./pages/Ledger";
 import Updates from "./pages/updates";
 import Chat from "./pages/Chat";
+import TaskDetails from "./pages/TaskDetails";
+import FirmDetails from "./pages/FirmDetails";
 
 function App() {
   return (
@@ -41,9 +43,11 @@ function App() {
               <Route path="/tasks" element={<Task />} />
               <Route path="/tasks/ongoing" element={<Task />} />
               <Route path="/tasks/completed" element={<Task />} />
-              <Route path="/tasks/:taskId/documents" element={<TaskDocumentUpload />} />
+              <Route path="/task/:task_id" element={<TaskDetails />} />
+              <Route path="/tasks/:task_id/documents" element={<TaskDocumentUpload />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/firms" element={<Firms />} />
+              <Route path="/firm/:firm_id" element={<FirmDetails />} />
               <Route path="/ledger" element={<Ledger />} />
                 <Route path="/updates" element={<Updates />} />
                 <Route path="/chat" element={<Chat />} />

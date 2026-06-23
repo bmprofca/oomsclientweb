@@ -1,80 +1,92 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Edit, Trash, MapPin, Eye } from 'lucide-react';
+import { Building2, Plus, Edit, Trash, Eye, Activity, Building } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
 import ManagementCard from '../components/common/ManagementCard';
 import ManagementGrid from '../components/common/ManagementGrid';
-import ManagementViewSwitcher from '../components/common/ManagementViewSwitcher';
 import ManagementFilters from '../components/common/ManagementFilters';
 import Modal from '../components/common/Modal';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
-
-// Dummy Data
-export const DUMMY_FIRMS = Array.from({ length: 35 }, (_, i) => ({
-  id: `frm-${i + 1}`,
-  name: `Global Firm ${i + 1}`,
-  type: ['Corporation', 'LLC', 'Partnership'][i % 3],
-  location: ['New York, USA', 'London, UK', 'Tokyo, JP', 'Berlin, DE'][i % 4],
-  employees: Math.floor(Math.random() * 500) + 10,
-  status: i % 5 === 0 ? 'Inactive' : 'Active',
-  contactEmail: `contact@firm${i + 1}.com`,
-}));
+import { apiCall } from '../utils/apiCall';
+import toast from 'react-hot-toast';
 
 export default function Firms() {
   const [viewMode, setViewMode] = useState('table');
-  const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 10);
+  const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
-
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
-  const [typeFilter, setTypeFilter] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  
+  const [firms, setFirms] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredData = DUMMY_FIRMS.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter ? item.status === statusFilter.value : true;
-    const matchesType = typeFilter ? item.type === typeFilter.value : true;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // Fetch Firms
+  const fetchFirms = async () => {
+    setIsLoading(true);
+    try {
+      // Map frontend status label to backend boolean string if needed, or send as is
+      let statusQuery = '';
+      if (statusFilter) {
+        if (statusFilter.value === 'true') statusQuery = 'true';
+        if (statusFilter.value === 'false') statusQuery = 'false';
+      }
+
+      const endpoint = `/firm/list?page_no=${pagination.page}&limit=${pagination.limit}&status=${statusQuery}&search=${encodeURIComponent(searchQuery)}`;
+      
+      const response = await apiCall(endpoint, 'GET');
+      const data = await response.json();
+      
+      if (response.ok && data.success !== false) {
+        setFirms(data.data || []);
+        if (data.pagination) {
+          updatePagination({ total: data.pagination.total });
+        }
+      } else {
+        setFirms([]);
+        updatePagination({ total: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to fetch firms:', error);
+      toast.error('Failed to load firms');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    updatePagination({ total: filteredData.length });
-  }, [filteredData.length, updatePagination]);
+    const timer = setTimeout(() => {
+      fetchFirms();
+    }, 300);
 
-  const startIndex = (pagination.page - 1) * pagination.limit;
-  const currentData = filteredData.slice(startIndex, startIndex + pagination.limit);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, pagination.limit, searchQuery, statusFilter]);
 
   const handleRefresh = () => {
-    console.log('Refreshing firms...');
+    fetchFirms();
   };
 
   const handleViewDetails = (item) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    navigate(`/firm/${item.firm_id}`);
+  };
+
+  const formatType = (typeStr) => {
+    if (!typeStr) return '-';
+    // e.g. "private_limited" -> "Private Limited"
+    return typeStr.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   const tableColumns = [
-    { key: 'name', label: 'Firm Name', render: (row) => <span className="font-bold text-indigo-900 dark:text-indigo-200">{row.name}</span> },
-    { key: 'type', label: 'Type' },
-    { 
-      key: 'location', 
-      label: 'Location',
-      render: (row) => (
-        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-          <MapPin size={14} className="text-slate-400" />
-          <span>{row.location}</span>
-        </div>
-      )
-    },
-    { key: 'employees', label: 'Employees' },
+    { key: 'firm_name', label: 'Firm Name', render: (row) => <span className="font-bold text-indigo-900 dark:text-indigo-200">{row.firm_name}</span> },
+    { key: 'firm_type', label: 'Type', render: (row) => <span>{formatType(row.firm_type)}</span> },
     { 
       key: 'status', 
       label: 'Status', 
       render: (row) => (
-        <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${row.status === 'Active' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
-          {row.status}
+        <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${row.status ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+          {row.status ? 'Active' : 'Inactive'}
         </span>
       )
     },
@@ -82,8 +94,8 @@ export default function Firms() {
 
   const getRowActions = (row) => [
     { id: 'view', label: 'View Details', icon: <Eye size={14} />, color: 'green', onClick: () => handleViewDetails(row) },
-    { id: 'edit', label: 'Edit Firm Details', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.id) },
-    { id: 'delete', label: 'Remove Firm', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.id) },
+    { id: 'edit', label: 'Edit Firm Details', icon: <Edit size={14} />, color: 'blue', onClick: () => console.log('Edit', row.firm_id) },
+    { id: 'delete', label: 'Remove Firm', icon: <Trash size={14} />, danger: true, onClick: () => console.log('Delete', row.firm_id) },
   ];
 
   return (
@@ -107,38 +119,36 @@ export default function Firms() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="Search firms by name or location..."
+          onSearchChange={(val) => { setSearchQuery(val); goToPage(1); }}
+          searchPlaceholder="Search firms by name..."
           filters={[
             {
               value: statusFilter,
-              onChange: setStatusFilter,
+              onChange: (val) => { setStatusFilter(val); goToPage(1); },
               options: [
-                { value: 'Active', label: 'Active' },
-                { value: 'Inactive', label: 'Inactive' }
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' }
               ],
               placeholder: 'Status',
-              isClearable: true
-            },
-            {
-              value: typeFilter,
-              onChange: setTypeFilter,
-              options: [
-                { value: 'Corporation', label: 'Corporation' },
-                { value: 'LLC', label: 'LLC' },
-                { value: 'Partnership', label: 'Partnership' }
-              ],
-              placeholder: 'Firm Type',
               isClearable: true
             }
           ]}
         />
 
-        {viewMode === 'table' ? (
+        {isLoading ? (
+          <div className="flex justify-center p-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          </div>
+        ) : firms.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
+            <Building className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
+            <p className="text-slate-500 dark:text-slate-400 font-medium">No firms found</p>
+          </div>
+        ) : viewMode === 'table' ? (
           <ManagementTable
             columns={tableColumns}
-            rows={currentData}
-            rowKey="id"
+            rows={firms}
+            rowKey="firm_id"
             accent="indigo"
             getActions={getRowActions}
             activeId={activeMenuId}
@@ -147,33 +157,26 @@ export default function Firms() {
           />
         ) : (
           <ManagementGrid viewMode={viewMode}>
-            {currentData.map((firm) => (
+            {firms.map((firm) => (
               <ManagementCard
-                key={firm.id}
-                title={firm.name}
-                subtitle={firm.type}
+                key={firm.firm_id}
+                title={firm.firm_name}
+                subtitle={formatType(firm.firm_type)}
                 accent="indigo"
                 icon={<Building2 size={16} />}
                 badge={
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${firm.status === 'Active' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
-                    {firm.status}
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${firm.status ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                    {firm.status ? 'Active' : 'Inactive'}
                   </span>
                 }
                 actions={getRowActions(firm)}
-                menuId={`menu-${firm.id}`}
+                menuId={`menu-${firm.firm_id}`}
                 activeId={activeMenuId}
                 onToggle={(e, id) => setActiveMenuId(id)}
                 onClick={() => handleViewDetails(firm)}
               >
-                <div className="mt-2 text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                  <MapPin size={14} className="text-slate-400" />
-                  {firm.location}
-                </div>
                 <div className="mt-3 flex justify-between items-center text-xs border-t border-slate-100 dark:border-gray-700 pt-2">
-                  <span className="text-slate-500">Employees: <span className="font-semibold text-slate-900 dark:text-slate-200">{firm.employees}</span></span>
-                  <a href={`mailto:${firm.contactEmail}`} className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium truncate max-w-[120px]">
-                    {firm.contactEmail}
-                  </a>
+                  <span className="text-slate-500 flex items-center gap-1"><Activity size={12}/> Profile: {firm.status ? 'Active' : 'Disabled'}</span>
                 </div>
               </ManagementCard>
             ))}
@@ -188,57 +191,6 @@ export default function Firms() {
           onLimitChange={changeLimit}
         />
       </div>
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Firm Details"
-        icon={Building2}
-        size="md"
-        confirmText="Edit Firm"
-        onConfirm={() => console.log('Edit from modal', selectedItem?.id)}
-      >
-        {selectedItem && (
-          <div className="space-y-4 text-sm">
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Name:</span> 
-              <p className="text-indigo-900 dark:text-indigo-200 mt-1 font-bold">{selectedItem.name}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Type:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.type}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span> 
-              <p className="mt-1">
-                <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${selectedItem.status === 'Active' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
-                  {selectedItem.status}
-                </span>
-              </p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Location:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-1.5">
-                <MapPin size={16} />
-                {selectedItem.location}
-              </p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Employees:</span> 
-              <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedItem.employees}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Contact:</span> 
-              <p className="mt-1">
-                <a href={`mailto:${selectedItem.contactEmail}`} className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                  {selectedItem.contactEmail}
-                </a>
-              </p>
-            </div>
-          </div>
-        )}
-      </Modal>
-
     </ManagementHub>
   );
 }
