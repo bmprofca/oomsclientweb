@@ -105,7 +105,7 @@ export default function ManagementTable({
       <div className={joinClasses('w-full', tableClassName)}>
         <table className="w-full table-fixed text-left text-sm text-gray-700 dark:text-gray-300">
           {showHeader && (
-            <thead className={joinClasses('hidden sm:table-header-group bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-800/50 text-xs uppercase text-gray-600 dark:text-gray-400', headerClassName)}>
+            <thead className={joinClasses('bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-800/50 text-xs uppercase text-gray-600 dark:text-gray-400', headerClassName)}>
               <tr>
                 {visibleColumns.map((column) => (
                   <th
