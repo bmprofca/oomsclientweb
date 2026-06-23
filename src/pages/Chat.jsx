@@ -114,7 +114,6 @@ export default function Chat() {
 
   return (
     <ManagementHub
-      eyebrow="Consultation Portal"
       title="Consultant Advisory Chat"
       description="Direct secure communication channel with your assigned senior tax consultants and compliance managers."
       accent="blue"

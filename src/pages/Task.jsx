@@ -125,7 +125,6 @@ export default function Task() {
 
   return (
     <ManagementHub
-      eyebrow="Task Manager"
       title="Tasks & Assignments"
       description="Track and manage all operational tasks and deadlines."
       accent="amber"

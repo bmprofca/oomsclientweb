@@ -134,7 +134,6 @@ export default function Profile() {
 
   return (
     <ManagementHub
-      eyebrow="Settings"
       title="My Profile"
       description="Manage your personal information, address, and business details."
       accent="blue"

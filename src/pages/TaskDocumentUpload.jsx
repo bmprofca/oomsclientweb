@@ -87,7 +87,6 @@ export default function TaskDocumentUpload() {
 
   return (
     <ManagementHub
-      eyebrow="Task Documents"
       title={`Upload Documents`}
       description={`Add reference documents, deliverables, or attachments for task ${taskId}.`}
       accent="indigo"

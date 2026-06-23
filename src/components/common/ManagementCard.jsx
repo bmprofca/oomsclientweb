@@ -9,7 +9,6 @@ function joinClasses(...classes) {
 export default function ManagementCard({
   title,
   subtitle,
-  eyebrow,
   icon,
   badge,
   headerAction,
@@ -49,14 +48,9 @@ export default function ManagementCard({
       )}
       onClick={onClick}
     >
-      {(eyebrow || title || subtitle || badge || headerAction || actions) && (
+      {( title || subtitle || badge || headerAction || actions) && (
         <div className="mb-2 flex items-start justify-between gap-1.5">
           <div className="min-w-0">
-            {eyebrow && (
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-gray-500">
-                {eyebrow}
-              </p>
-            )}
             <div className="flex items-center gap-1.5">
               {icon && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-gray-300">{icon}</span>}
               <div className="min-w-0">

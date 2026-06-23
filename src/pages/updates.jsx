@@ -159,7 +159,6 @@ export default function Updates() {
 
   return (
     <ManagementHub
-      eyebrow="Timeline Monitor"
       title="Task Process Updates"
       description="Real-time log of document clearances, audit validations, GST reconciliations, and tax agent actions."
       accent="indigo"

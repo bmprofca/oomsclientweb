@@ -114,7 +114,6 @@ export default function Services() {
 
   return (
     <ManagementHub
-      eyebrow="Services Directory"
       title="Services Management"
       description="Manage all your available services, pricing, and categories."
       accent="blue"
