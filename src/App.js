@@ -53,6 +53,7 @@ function App() {
               <Route path="/firm/:firm_id" element={<FirmDetails />} />
               <Route path="/documents" element={<Documents />} />
               <Route path="/ledger" element={<Ledger />} />
+                <Route path="/updates" element={<Updates />} />
               </Route>
             </Route>
 

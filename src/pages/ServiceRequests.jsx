@@ -65,13 +65,21 @@ export default function ServiceRequests() {
     }
   };
 
+  const debounceTimerRef = useRef(null);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
       fetchRequests();
     }, 300);
 
     return () => {
-      clearTimeout(timer);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
