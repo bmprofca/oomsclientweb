@@ -30,7 +30,7 @@ export default function RefreshButton({
       {...rest}
     >
       <FaSyncAlt className={loading ? 'animate-spin' : ''} size={13} />
-      <span className="whitespace-nowrap">{children}</span>
+      <span className="hidden md:inline whitespace-nowrap">{children}</span>
     </motion.button>
   );
 }

@@ -267,7 +267,7 @@ export default function ServiceRequests() {
           className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-[11px] sm:text-sm font-semibold transition-colors shadow-sm"
         >
           <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-          <span>Create Request</span>
+          <span className="hidden sm:inline">Create Request</span>
         </button>
       }
       summary={null}
