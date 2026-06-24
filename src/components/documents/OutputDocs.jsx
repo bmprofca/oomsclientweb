@@ -1,21 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Briefcase, IndianRupee, Users, ClipboardList, House, Download, FileText } from 'lucide-react';
+import {
+  IndianRupee, Users, ClipboardList,
+  Download, FileText, Eye, X, ExternalLink,
+  Calendar, Building2, Tag, StickyNote,
+} from 'lucide-react';
 import SelectField from '../common/SelectField';
-import ManagementTable from '../common/ManagementTable';
-import ManagementCard from '../common/ManagementCard';
-import ManagementGrid from '../common/ManagementGrid';
 import Pagination, { usePagination } from '../common/PaginationComponent';
 import { PageContentSkeleton } from '../SkeletonComponent';
+import Modal from '../common/Modal';
 import { apiCall } from '../../utils/apiCall';
 import toast from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
 
+/* ─── Category tabs ─────────────────────────────────────── */
 const categories = [
-  { id: 'gst', label: 'GST', icon: IndianRupee },
-  { id: 'mca', label: 'MCA', icon: Users },
+  { id: 'gst', label: 'GST',  icon: IndianRupee },
+  { id: 'mca', label: 'MCA',  icon: Users        },
   { id: 'task', label: 'Task', icon: ClipboardList },
 ];
 
-// Generate last 7 financial years: e.g. 2024-25, 2023-24 ...
+/* ─── Year / Month options ───────────────────────────────── */
 const currentFY = new Date().getFullYear();
 const yearOptions = Array.from({ length: 7 }, (_, i) => {
   const start = currentFY - i;
@@ -24,90 +28,308 @@ const yearOptions = Array.from({ length: 7 }, (_, i) => {
 });
 
 const monthOptions = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-].map((m) => ({ label: m, value: m }));
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+].map(m => ({ label: m, value: m }));
 
+/* ─── "All" sentinel options (value:null → no filter sent to API) ─── */
+const ALL_FIRMS  = { label: 'All Firms',  value: null };
+const ALL_TYPES  = { label: 'All Types',  value: null };
+const ALL_FY     = { label: 'All FY',     value: null };
+const ALL_MONTHS = { label: 'All Months', value: null };
+
+/* ─── Helpers ────────────────────────────────────────────── */
+function getFileType(url = '') {
+  const ext = url.split('?')[0].split('.').pop().toLowerCase();
+  if (['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) return 'image';
+  if (ext === 'pdf') return 'pdf';
+  return 'other';
+}
+
+function accentForCategory(id) {
+  if (id === 'gst')  return { tag: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', border: 'border-emerald-400', dot: 'bg-emerald-500' };
+  if (id === 'mca')  return { tag: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',     border: 'border-blue-400',    dot: 'bg-blue-500'    };
+  return               { tag: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300', border: 'border-violet-400', dot: 'bg-violet-500' };
+}
+
+/* ─── Document Viewer Modal ──────────────────────────────── */
+function DocViewerModal({ isOpen, onClose, doc }) {
+  if (!doc) return null;
+  const fileUrl  = doc.file || '';
+  const fileType = getFileType(fileUrl);
+  const title    = doc.firm?.name || 'Document';
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Backdrop */}
+          <motion.div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Panel */}
+          <motion.div
+            className="relative z-10 flex flex-col w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-gray-900"
+            style={{ height: '90vh' }}
+            initial={{ scale: 0.95, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.95, y: 20, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          >
+            {/* Header */}
+            <div className="shrink-0">
+              <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500" />
+              <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 shrink-0">
+                    <FileText size={18} className="text-emerald-600 dark:text-emerald-400" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 dark:text-gray-100 truncate">{title}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {[doc.type?.toUpperCase(), doc.f_year, doc.month].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {fileUrl && (
+                    <a
+                      href={fileUrl}
+                      download
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+                    >
+                      <Download size={13} /> Download
+                    </a>
+                  )}
+                  {fileUrl && (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-medium transition-colors"
+                    >
+                      <ExternalLink size={13} /> Open Tab
+                    </a>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950 flex items-center justify-center">
+              {!fileUrl ? (
+                <div className="flex flex-col items-center gap-3 text-slate-400">
+                  <FileText size={48} className="opacity-30" />
+                  <p className="text-sm">No file available</p>
+                </div>
+              ) : fileType === 'image' ? (
+                <img
+                  src={fileUrl}
+                  alt={title}
+                  className="max-w-full max-h-full object-contain rounded shadow-md"
+                />
+              ) : fileType === 'pdf' ? (
+                <iframe
+                  src={fileUrl}
+                  title={title}
+                  className="w-full h-full border-0"
+                />
+              ) : (
+                /* Fallback: try object tag, then link */
+                <div className="flex flex-col items-center gap-4 text-slate-500 dark:text-slate-400">
+                  <FileText size={56} className="opacity-20" />
+                  <p className="text-sm font-medium">Preview not available for this file type.</p>
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+                  >
+                    <ExternalLink size={14} /> Open in new tab
+                  </a>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─── Document Card ──────────────────────────────────────── */
+function DocCard({ doc, activeCategory, onView, onDownload }) {
+  const accent = accentForCategory(activeCategory);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.22 }}
+      className={`group relative flex flex-col bg-white dark:bg-gray-800 rounded-xl border-l-4 ${accent.border} border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}
+    >
+      {/* Card top stripe */}
+      <div className="px-3 pt-3 pb-2 sm:px-4 sm:pt-4 sm:pb-3 flex-1 flex flex-col gap-2 sm:gap-3">
+        {/* Icon + type badge */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center justify-center h-7 w-7 sm:h-10 sm:w-10 rounded-lg bg-slate-100 dark:bg-slate-700 shrink-0">
+            <FileText size={14} className="sm:hidden text-slate-500 dark:text-slate-300" />
+            <FileText size={20} className="hidden sm:block text-slate-500 dark:text-slate-300" />
+          </div>
+          {doc.type && (
+            <span className={`text-[9px] sm:text-[10px] font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-full ${accent.tag}`}>
+              {doc.type}
+            </span>
+          )}
+        </div>
+
+        {/* Firm name */}
+        <div>
+          <p className="font-semibold text-slate-800 dark:text-gray-100 text-xs sm:text-sm leading-tight line-clamp-1 sm:line-clamp-2">
+            {doc.firm?.name || 'Unknown Firm'}
+          </p>
+        </div>
+
+        {/* Meta pills */}
+        <div className="flex flex-wrap gap-1">
+          {doc.f_year && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
+              <Calendar size={9} /> {doc.f_year}
+            </span>
+          )}
+          {doc.month && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full capitalize">
+              <Tag size={9} /> <span className="hidden sm:inline">{doc.month}</span><span className="sm:hidden">{doc.month.slice(0,3)}</span>
+            </span>
+          )}
+          {doc.create_date && (
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+              <Building2 size={10} /> {doc.create_date.split(' ')[0]}
+            </span>
+          )}
+        </div>
+
+        {/* Remark — hidden on mobile */}
+        {doc.remark && (
+          <p className="hidden sm:flex text-[11px] text-slate-400 dark:text-slate-500 line-clamp-2 items-start gap-1">
+            <StickyNote size={10} className="mt-0.5 shrink-0" /> {doc.remark}
+          </p>
+        )}
+      </div>
+
+      {/* Action bar */}
+      <div className="flex border-t border-gray-100 dark:border-gray-700">
+        <button
+          onClick={() => onView(doc)}
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
+        >
+          <Eye size={12} /> <span>View</span>
+        </button>
+        <div className="w-px bg-gray-100 dark:bg-gray-700" />
+        <button
+          onClick={() => onDownload(doc.file)}
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+        >
+          <Download size={12} /> <span>Download</span>
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Main Component ─────────────────────────────────────── */
 export default function OutputDocs() {
   const [activeCategory, setActiveCategory] = useState('gst');
-  const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
 
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filters
-  const [selectedFirm, setSelectedFirm] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  /* Viewer modal state */
+  const [viewDoc, setViewDoc] = useState(null);
 
-  // Firm dropdown state
-  const [firmOptions, setFirmOptions] = useState([]);
-  const [firmPage, setFirmPage] = useState(1);
-  const [firmHasMore, setFirmHasMore] = useState(true);
+  /* Filters — default to the "All …" sentinel so the dropdown shows a label immediately */
+  const [selectedFirm,  setSelectedFirm]  = useState(ALL_FIRMS);
+  const [selectedType,  setSelectedType]  = useState(ALL_TYPES);
+  const [selectedYear,  setSelectedYear]  = useState(ALL_FY);
+  const [selectedMonth, setSelectedMonth] = useState(ALL_MONTHS);
+
+  /* Firm dropdown */
+  const [firmOptions,   setFirmOptions]   = useState([]);
+  const [firmPage,      setFirmPage]      = useState(1);
+  const [firmHasMore,   setFirmHasMore]   = useState(true);
   const [firmIsLoading, setFirmIsLoading] = useState(false);
-  const [firmSearch, setFirmSearch] = useState('');
+  const [firmSearch,    setFirmSearch]    = useState('');
   const firmSearchTimerRef = useRef(null);
-  const docsAbortRef = useRef(null);  // cancel in-flight document requests
-  const firmAbortRef = useRef(null);  // cancel in-flight firm requests
-  const typesAbortRef = useRef(null); // cancel in-flight types requests
-  const firmLoadedRef = useRef(false);  // true once firms have been fetched at least once
-  const typesLoadedRef = useRef(false); // true once types have been fetched at least once
 
-  // Document Types from API
-  const [documentTypes, setDocumentTypes] = useState({});
+  /* AbortControllers */
+  const docsAbortRef  = useRef(null);
+  const firmAbortRef  = useRef(null);
+  const typesAbortRef = useRef(null);
 
-  useEffect(() => {
-    const handleResize = () => setViewMode(window.innerWidth < 768 ? 'card' : 'table');
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  /* Lazy-load guards */
+  const firmLoadedRef  = useRef(false);
+  const typesLoadedRef = useRef(false);
 
-  // Fetch document types — lazy, called only on first open of types dropdown
+  /* Document types */
+  const [documentTypes,   setDocumentTypes]   = useState({});
+  const [typesIsLoading,  setTypesIsLoading]  = useState(false);
+
+  /* ── Fetch document types ── */
   const fetchDocumentTypes = useCallback(async () => {
     if (typesAbortRef.current) typesAbortRef.current.abort();
     const controller = new AbortController();
     typesAbortRef.current = controller;
+    setTypesIsLoading(true);
     try {
       const response = await apiCall('/document/types', 'GET', null, { signal: controller.signal });
       const data = await response.json();
-      if (data.success) {
-        setDocumentTypes(data.data || {});
-      }
-    } catch (error) {
-      if (error.name === 'AbortError') return;
-      console.error('Failed to fetch document types:', error);
+      if (data.success) setDocumentTypes(data.data || {});
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('Failed to fetch document types:', err);
+    } finally {
+      setTypesIsLoading(false);
     }
   }, []);
 
-  // Open types dropdown → fetch types once
   const handleTypeMenuOpen = () => {
     if (typesLoadedRef.current) return;
     typesLoadedRef.current = true;
     fetchDocumentTypes();
   };
 
-  // Fetch firms for dropdown — lazy, with AbortController to prevent duplicate calls
+  /* ── Fetch firms ── */
   const fetchFirmOptions = useCallback(async (search = '', page = 1, append = false) => {
     if (firmAbortRef.current) firmAbortRef.current.abort();
     const controller = new AbortController();
     firmAbortRef.current = controller;
-
     setFirmIsLoading(true);
     try {
       const endpoint = `/firm/list?page_no=${page}&limit=20&search=${encodeURIComponent(search)}`;
       const response = await apiCall(endpoint, 'GET', null, { signal: controller.signal });
       const data = await response.json();
       if (response.ok && data.success !== false) {
-        const options = (data.data || []).map((f) => ({
-          label: f.firm_name,
-          value: f.firm_id,
-        }));
+        const options = (data.data || []).map(f => ({ label: f.firm_name, value: f.firm_id }));
         if (append) {
-          setFirmOptions((prev) => {
-            const existingIds = new Set(prev.map((o) => o.value));
-            return [...prev, ...options.filter((o) => !existingIds.has(o.value))];
+          setFirmOptions(prev => {
+            const ids = new Set(prev.map(o => o.value));
+            return [...prev, ...options.filter(o => !ids.has(o.value))];
           });
         } else {
           setFirmOptions(options);
@@ -128,23 +350,16 @@ export default function OutputDocs() {
     }
   }, []);
 
-  // Open firm dropdown → fetch firms once on first open
   const handleFirmMenuOpen = () => {
     if (firmLoadedRef.current) return;
     firmLoadedRef.current = true;
     fetchFirmOptions('', 1, false);
   };
 
-  // Handle firm search with debounce
-  // Guard: skip if firms haven't been loaded yet (onMenuOpen owns the first fetch)
-  //        or if the input value hasn't actually changed (react-select fires '' on open)
   const handleFirmInputChange = (inputValue, { action } = {}) => {
-    // react-select fires onInputChange with action='set-value' or 'input-blur' on select/blur
-    // We only want to search on actual typing (action === 'input-change')
     if (action && action !== 'input-change') return;
-    if (!firmLoadedRef.current) return; // first load is owned by onMenuOpen
-    if (inputValue === firmSearch) return; // no real change
-
+    if (!firmLoadedRef.current) return;
+    if (inputValue === firmSearch) return;
     setFirmSearch(inputValue);
     if (firmSearchTimerRef.current) clearTimeout(firmSearchTimerRef.current);
     firmSearchTimerRef.current = setTimeout(() => {
@@ -153,7 +368,6 @@ export default function OutputDocs() {
     }, 300);
   };
 
-  // Handle firm dropdown scroll to bottom → load next page
   const handleFirmMenuScrollToBottom = () => {
     if (!firmHasMore || firmIsLoading) return;
     const nextPage = firmPage + 1;
@@ -161,22 +375,18 @@ export default function OutputDocs() {
     fetchFirmOptions(firmSearch, nextPage, true);
   };
 
-  // Fetch documents — cancel any previous in-flight request first
+  /* ── Fetch documents ── */
   const fetchDocuments = useCallback(async () => {
-    // Abort previous request if still running
-    if (docsAbortRef.current) {
-      docsAbortRef.current.abort();
-    }
+    if (docsAbortRef.current) docsAbortRef.current.abort();
     const controller = new AbortController();
     docsAbortRef.current = controller;
-
     setIsLoading(true);
     try {
       let queryParams = `?page_no=${pagination.page}&limit=${pagination.limit}`;
-      if (selectedFirm)  queryParams += `&firm_id=${encodeURIComponent(selectedFirm.value)}`;
-      if (selectedType)  queryParams += `&type=${encodeURIComponent(selectedType.value)}`;
-      if (selectedYear)  queryParams += `&year=${encodeURIComponent(selectedYear.value)}`;
-      if (selectedMonth) queryParams += `&month=${encodeURIComponent(selectedMonth.value)}`;
+      if (selectedFirm?.value  != null) queryParams += `&firm_id=${encodeURIComponent(selectedFirm.value)}`;
+      if (selectedType?.value  != null) queryParams += `&type=${encodeURIComponent(selectedType.value)}`;
+      if (selectedYear?.value  != null) queryParams += `&year=${encodeURIComponent(selectedYear.value)}`;
+      if (selectedMonth?.value != null) queryParams += `&month=${encodeURIComponent(selectedMonth.value)}`;
 
       const endpoint = `/document/list/${activeCategory}${queryParams}`;
       const response = await apiCall(endpoint, 'GET', null, { signal: controller.signal });
@@ -184,15 +394,13 @@ export default function OutputDocs() {
 
       if (response.ok && data.success !== false) {
         setDocuments(data.data || []);
-        if (data.pagination) {
-          updatePagination({ total: data.pagination.total });
-        }
+        if (data.pagination) updatePagination({ total: data.pagination.total });
       } else {
         setDocuments([]);
         updatePagination({ total: 0 });
       }
     } catch (error) {
-      if (error.name === 'AbortError') return; // Ignore cancelled requests
+      if (error.name === 'AbortError') return;
       console.error('Failed to fetch documents:', error);
       toast.error('Failed to load documents');
       setDocuments([]);
@@ -203,55 +411,43 @@ export default function OutputDocs() {
   }, [activeCategory, pagination.page, pagination.limit, selectedFirm, selectedType, selectedYear, selectedMonth]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchDocuments();
-    }, 300);
+    const timer = setTimeout(fetchDocuments, 300);
     return () => {
       clearTimeout(timer);
-      // Abort any in-flight request when dependencies change or component unmounts
       if (docsAbortRef.current) docsAbortRef.current.abort();
     };
   }, [fetchDocuments]);
 
-  // Handle Category Change
+  /* ── Handlers ── */
   const handleCategoryChange = (categoryId) => {
     setActiveCategory(categoryId);
     goToPage(1);
-    setSelectedType(null); // Reset type filter on category change
-  };
-
-  // Get options for SelectField based on active category
-  const getTypeOptions = () => {
-    const types = documentTypes[activeCategory] || [];
-    return types.map(t => ({ label: t.name, value: t.value }));
+    setSelectedType(ALL_TYPES); // reset type sentinel on category change
   };
 
   const handleDownload = (fileUrl) => {
-    if (fileUrl) {
-      window.open(fileUrl, '_blank');
-    } else {
-      toast.error('File URL not available');
-    }
+    if (!fileUrl) { toast.error('File URL not available'); return; }
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = fileUrl.split('/').pop().split('?')[0] || 'document';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
-  const tableColumns = [
-    { key: 'firm_name', label: 'Firm Name', render: (row) => <span className="font-medium text-indigo-900 dark:text-indigo-200">{row.firm?.name || '-'}</span> },
-    { key: 'f_year', label: 'Fin. Year', render: (row) => <span>{row.f_year || '-'}</span> },
-    { key: 'month', label: 'Month', render: (row) => <span className="capitalize">{row.month || '-'}</span> },
-    { key: 'type', label: 'Type', render: (row) => <span className="uppercase text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded">{row.type || '-'}</span> },
-    { key: 'remark', label: 'Remark', render: (row) => <span className="truncate max-w-[150px] inline-block" title={row.remark}>{row.remark || '-'}</span> },
-    { key: 'date', label: 'Created At', render: (row) => <span className="text-sm">{row.create_date?.split(' ')[0] || '-'}</span> },
-  ];
+  const getTypeOptions = () => {
+    const types = documentTypes[activeCategory] || [];
+    return [ALL_TYPES, ...types.map(t => ({ label: t.name, value: t.value }))];
+  };
 
-  const getRowActions = (row) => [
-    { id: 'download', label: 'Download', icon: <Download size={14} />, color: 'blue', onClick: () => handleDownload(row.file) },
-  ];
-
+  /* ── Render ── */
   return (
     <div>
-      {/* Sub Tabs */}
+      {/* ── Category Tabs ── */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {categories.map((cat) => {
+        {categories.map(cat => {
           const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
           return (
@@ -271,101 +467,80 @@ export default function OutputDocs() {
         })}
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
+      {/* ── Filters ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6 p-2.5 sm:p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Firm</label>
           <SelectField
-            options={firmOptions}
+            options={[ALL_FIRMS, ...firmOptions]}
             value={selectedFirm}
-            onChange={(val) => { setSelectedFirm(val); goToPage(1); }}
-            placeholder="Search & select firm..."
-            isClearable
+            onChange={val => { setSelectedFirm(val ?? ALL_FIRMS); goToPage(1); }}
+            placeholder="All Firms"
             isSearchable
             isLoading={firmIsLoading}
             onMenuOpen={handleFirmMenuOpen}
             onInputChange={handleFirmInputChange}
             onMenuScrollToBottom={handleFirmMenuScrollToBottom}
-            filterOption={() => true}
+            filterOption={(opt, input) => opt.data.value === null || true}
             noOptionsMessage={() => firmIsLoading ? 'Loading...' : 'No firms found'}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Document Type</label>
           <SelectField
             options={getTypeOptions()}
             value={selectedType}
-            onChange={(val) => { setSelectedType(val); goToPage(1); }}
-            placeholder="Select Type..."
-            isClearable
+            onChange={val => { setSelectedType(val ?? ALL_TYPES); goToPage(1); }}
+            placeholder="All Types"
             onMenuOpen={handleTypeMenuOpen}
-            isLoading={!typesLoadedRef.current && documentTypes[activeCategory] === undefined}
-            noOptionsMessage={() => !typesLoadedRef.current ? 'Open to load types...' : 'No types found'}
+            isLoading={typesIsLoading}
+            noOptionsMessage={() => typesIsLoading ? 'Loading...' : 'No types found'}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
           <SelectField
-            options={yearOptions}
+            options={[ALL_FY, ...yearOptions]}
             value={selectedYear}
-            onChange={(val) => { setSelectedYear(val); goToPage(1); }}
-            placeholder="Select year..."
-            isClearable
+            onChange={val => { setSelectedYear(val ?? ALL_FY); goToPage(1); }}
+            placeholder="All FY"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Month</label>
           <SelectField
-            options={monthOptions}
+            options={[ALL_MONTHS, ...monthOptions]}
             value={selectedMonth}
-            onChange={(val) => { setSelectedMonth(val); goToPage(1); }}
-            placeholder="Select month..."
-            isClearable
+            onChange={val => { setSelectedMonth(val ?? ALL_MONTHS); goToPage(1); }}
+            placeholder="All Months"
           />
         </div>
       </div>
 
-      {/* Results */}
+      {/* ── Results ── */}
       {isLoading ? (
-        <PageContentSkeleton viewMode={viewMode} columns={6} rows={6} />
+        <PageContentSkeleton viewMode="card" columns={4} rows={8} />
       ) : documents.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
-          <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-14 text-center flex flex-col items-center gap-3">
+          <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600" />
           <p className="text-slate-500 dark:text-slate-400 font-medium">No documents found</p>
+          <p className="text-slate-400 dark:text-slate-500 text-sm">Try adjusting your filters above.</p>
         </div>
-      ) : viewMode === 'table' ? (
-        <ManagementTable
-          columns={tableColumns}
-          rows={documents}
-          rowKey="id" // documents might not have a unique id in the example, we should use index or map them
-          accent="emerald"
-          getActions={getRowActions}
-          onRowClick={(row) => handleDownload(row.file)}
-        />
       ) : (
-        <ManagementGrid viewMode={viewMode}>
-          {documents.map((doc, idx) => (
-            <ManagementCard
-              key={idx}
-              title={doc.firm?.name || 'Unknown Firm'}
-              subtitle={doc.type?.toUpperCase()}
-              accent="emerald"
-              icon={<FileText size={16} />}
-              badge={<span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">{doc.f_year}</span>}
-              actions={getRowActions(doc)}
-              onClick={() => handleDownload(doc.file)}
-            >
-              <div className="mt-3 text-xs text-slate-500 dark:text-slate-400 flex flex-col gap-1">
-                <p>Month: <span className="capitalize text-slate-700 dark:text-slate-300">{doc.month || '-'}</span></p>
-                <p>Created: <span className="text-slate-700 dark:text-slate-300">{doc.create_date?.split(' ')[0]}</span></p>
-              </div>
-            </ManagementCard>
-          ))}
-        </ManagementGrid>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
+          <AnimatePresence>
+            {documents.map((doc, idx) => (
+              <DocCard
+                key={doc.id ?? idx}
+                doc={doc}
+                activeCategory={activeCategory}
+                onView={setViewDoc}
+                onDownload={handleDownload}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
       )}
 
+      {/* ── Pagination ── */}
       {documents.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-5">
           <Pagination
             currentPage={pagination.page}
             totalItems={pagination.total}
@@ -375,6 +550,13 @@ export default function OutputDocs() {
           />
         </div>
       )}
+
+      {/* ── Document Viewer Modal ── */}
+      <DocViewerModal
+        isOpen={!!viewDoc}
+        onClose={() => setViewDoc(null)}
+        doc={viewDoc}
+      />
     </div>
   );
 }
