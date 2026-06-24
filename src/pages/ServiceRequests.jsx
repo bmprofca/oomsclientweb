@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageContentSkeleton } from '../components/SkeletonComponent';
-import { Eye, Activity, Box, IndianRupee, CalendarDays, Layers } from 'lucide-react';
+import { Eye, Activity, Box, IndianRupee, CalendarDays, Layers, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
@@ -10,6 +10,8 @@ import ManagementFilters from '../components/common/ManagementFilters';
 import Pagination, { usePagination } from '../components/common/PaginationComponent';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
+import Modal from '../components/common/Modal';
+import SelectField from '../components/common/SelectField';
 
 export default function ServiceRequests() {
   const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
@@ -24,6 +26,20 @@ export default function ServiceRequests() {
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const navigate = useNavigate();
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [selectedFormFirm, setSelectedFormFirm] = useState(null);
+  const [selectedFormService, setSelectedFormService] = useState(null);
+  const [formRemark, setFormRemark] = useState('');
+
+  const [firmOptions, setFirmOptions] = useState([]);
+  const [firmIsLoading, setFirmIsLoading] = useState(false);
+  const firmLoadedRef = useRef(false);
+
+  const [serviceOptions, setServiceOptions] = useState([]);
+  const [serviceIsLoading, setServiceIsLoading] = useState(false);
+  const serviceLoadedRef = useRef(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
@@ -89,6 +105,92 @@ export default function ServiceRequests() {
 
   const handleRefresh = () => {
     fetchRequests();
+  };
+
+  const fetchFirms = async (search = '') => {
+    setFirmIsLoading(true);
+    try {
+      const response = await apiCall(`/firm/list?page_no=1&limit=50&search=${encodeURIComponent(search)}`, 'GET');
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        setFirmOptions((data.data || []).map(f => ({ label: f.firm_name, value: f.firm_id })));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFirmIsLoading(false);
+    }
+  };
+
+  const handleFirmMenuOpen = () => {
+    if (!firmLoadedRef.current) {
+      firmLoadedRef.current = true;
+      fetchFirms();
+    }
+  };
+
+  const handleFirmInputChange = (val, { action }) => {
+    if (action === 'input-change') fetchFirms(val);
+  };
+
+  const fetchServices = async (search = '') => {
+    setServiceIsLoading(true);
+    try {
+      const response = await apiCall(`/service/list?page_no=1&limit=50&search=${encodeURIComponent(search)}`, 'GET');
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        setServiceOptions((data.data || []).map(s => ({ label: s.name, value: s.service_id })));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setServiceIsLoading(false);
+    }
+  };
+
+  const handleServiceMenuOpen = () => {
+    if (!serviceLoadedRef.current) {
+      serviceLoadedRef.current = true;
+      fetchServices();
+    }
+  };
+
+  const handleServiceInputChange = (val, { action }) => {
+    if (action === 'input-change') fetchServices(val);
+  };
+
+  const handleCreateRequest = async () => {
+    if (!selectedFormFirm || !selectedFormService) {
+      toast.error('Firm and Service are required');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const payload = {
+        firm_id: selectedFormFirm.value,
+        service_id: selectedFormService.value,
+        remark: formRemark
+      };
+
+      const response = await apiCall('/service/service-request/create', 'POST', payload);
+      const data = await response.json();
+
+      if (response.ok && data.success !== false) {
+        toast.success(data.message || 'Service request created successfully');
+        setIsCreateModalOpen(false);
+        setSelectedFormFirm(null);
+        setSelectedFormService(null);
+        setFormRemark('');
+        fetchRequests();
+      } else {
+        toast.error(data.message || 'Failed to create request');
+      }
+    } catch (error) {
+      toast.error(error.message || 'An error occurred');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleViewDetails = (item) => {
@@ -159,7 +261,15 @@ export default function ServiceRequests() {
       tabs={tabs}
       activeTab="requests"
       onTabChange={handleTabChange}
-      actions={null}
+      actions={
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-[11px] sm:text-sm font-semibold transition-colors shadow-sm"
+        >
+          <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span>Create Request</span>
+        </button>
+      }
       summary={null}
     >
       <div className="mt-4 flex flex-col gap-2">
@@ -246,6 +356,76 @@ export default function ServiceRequests() {
         />
       </div>
 
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => !isCreating && setIsCreateModalOpen(false)}
+        title="Create Service Request"
+        icon={Plus}
+        size="lg"
+        footer={
+          <>
+            <button
+              onClick={() => setIsCreateModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
+              disabled={isCreating}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateRequest}
+              disabled={isCreating || !selectedFormFirm || !selectedFormService}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isCreating ? 'Creating...' : 'Create'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Firm <span className="text-red-500">*</span>
+            </label>
+            <SelectField
+              options={firmOptions}
+              value={selectedFormFirm}
+              onChange={setSelectedFormFirm}
+              placeholder="Search firm..."
+              isSearchable
+              isLoading={firmIsLoading}
+              onMenuOpen={handleFirmMenuOpen}
+              onInputChange={handleFirmInputChange}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Service <span className="text-red-500">*</span>
+            </label>
+            <SelectField
+              options={serviceOptions}
+              value={selectedFormService}
+              onChange={setSelectedFormService}
+              placeholder="Search service..."
+              isSearchable
+              isLoading={serviceIsLoading}
+              onMenuOpen={handleServiceMenuOpen}
+              onInputChange={handleServiceInputChange}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Remark (Optional)
+            </label>
+            <textarea
+              value={formRemark}
+              onChange={e => setFormRemark(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={3}
+              placeholder="Any additional notes..."
+            />
+          </div>
+        </div>
+      </Modal>
     </ManagementHub>
   );
 }
