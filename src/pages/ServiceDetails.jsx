@@ -3,11 +3,13 @@ import { DetailSkeleton } from '../components/SkeletonComponent';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Layers, IndianRupee, Clock, FileText, Tag,
-  AlertCircle, Loader2, Wrench, Globe, CalendarDays, CheckCircle, XCircle, RefreshCw
+  AlertCircle, Loader2, Wrench, Globe, CalendarDays, CheckCircle, XCircle, RefreshCw, Activity
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
+import Modal from '../components/common/Modal';
+import SelectField from '../components/common/SelectField';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -80,6 +82,13 @@ export default function ServiceDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestFirm, setRequestFirm] = useState(null);
+  const [requestRemark, setRequestRemark] = useState('');
+  const [firmOptions, setFirmOptions] = useState([]);
+  const [isFirmsLoading, setIsFirmsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const abortControllerRef = useRef(null);
   const fetchedServiceIdRef = useRef(null);
 
@@ -125,6 +134,55 @@ export default function ServiceDetails() {
 
   const handleRefresh = () => {
     fetchDetails();
+  };
+
+  const handleOpenRequestModal = async () => {
+    setIsRequestModalOpen(true);
+    if (firmOptions.length === 0) {
+      setIsFirmsLoading(true);
+      try {
+        const res = await apiCall('/firm/list?page_no=1&limit=100', 'GET');
+        const data = await res.json();
+        if (res.ok && data.success !== false) {
+           const opts = (data.data || []).map(f => ({ label: f.firm_name, value: f.firm_id }));
+           setFirmOptions(opts);
+           if (opts.length === 1) setRequestFirm(opts[0]);
+        }
+      } catch(err) {
+        toast.error('Failed to load firms');
+      } finally {
+        setIsFirmsLoading(false);
+      }
+    }
+  };
+
+  const handleCreateRequest = async () => {
+    if (!requestFirm) {
+      toast.error('Please select a firm');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        firm_id: requestFirm.value,
+        service_id: service_id,
+        remark: requestRemark
+      };
+      const response = await apiCall('/service/service-request/create', 'POST', payload);
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        toast.success(data.message || 'Service requested successfully');
+        setIsRequestModalOpen(false);
+        setRequestRemark('');
+        navigate('/service-requests');
+      } else {
+        toast.error(data.message || 'Failed to request service');
+      }
+    } catch(err) {
+      toast.error('Failed to request service');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // ── Loading ──────────────────────────────────────────────────────────────────
@@ -183,15 +241,25 @@ export default function ServiceDetails() {
           </div>
         </div>
 
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefresh}
-          className="absolute top-[10px] right-[10px] flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
-          title="Refresh"
-        >
-          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        {/* Actions */}
+        <div className="absolute top-[10px] right-[10px] flex items-center gap-2">
+          <button
+            onClick={handleOpenRequestModal}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <Activity size={15} />
+            <span className="hidden sm:inline">Request Service</span>
+            <span className="sm:hidden">Request</span>
+          </button>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+            title="Refresh"
+          >
+            <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* ── Status strip ── */}
@@ -282,6 +350,62 @@ export default function ServiceDetails() {
 
         </div>
       </div>
+
+      <Modal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+        title="Request Service"
+        icon={Activity}
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => setIsRequestModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateRequest}
+              disabled={isSubmitting || !requestFirm}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+              Submit Request
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Select Firm <span className="text-red-500">*</span>
+            </label>
+            <SelectField
+              options={firmOptions}
+              value={requestFirm}
+              onChange={setRequestFirm}
+              placeholder="Select a firm..."
+              isLoading={isFirmsLoading}
+              isSearchable
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Remark
+            </label>
+            <textarea
+              value={requestRemark}
+              onChange={(e) => setRequestRemark(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/50 resize-none"
+              rows={4}
+              placeholder="Add any specific requirements or remarks..."
+            />
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }

@@ -58,12 +58,6 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       path: '/ledger',
       roles: ['admin'],
     },
-    {
-      icon: FileClock,
-      label: 'Updates',
-      path: '/updates',
-      roles: ['admin'],
-    }
   ];
 
   const menuItems = allMenuItems.filter(item => !item.roles || item.roles.includes(userType));

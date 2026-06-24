@@ -15,10 +15,11 @@ import Profile from "./pages/Profile";
 import Firms from "./pages/Firms";
 import Documents from "./pages/Documents";
 import Ledger from "./pages/Ledger";
-import Updates from "./pages/updates";
 import TaskDetails from "./pages/TaskDetails";
 import FirmDetails from "./pages/FirmDetails";
 import ServiceDetails from "./pages/ServiceDetails";
+import ServiceRequests from "./pages/ServiceRequests";
+import ServiceRequestDetails from "./pages/ServiceRequestDetails";
 
 function App() {
   return (
@@ -41,6 +42,8 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
               <Route path="/service/:service_id" element={<ServiceDetails />} />
+              <Route path="/service-requests" element={<ServiceRequests />} />
+              <Route path="/service-request/:request_id" element={<ServiceRequestDetails />} />
               <Route path="/tasks" element={<Task />} />
               <Route path="/tasks/ongoing" element={<Task />} />
               <Route path="/tasks/completed" element={<Task />} />
@@ -50,7 +53,6 @@ function App() {
               <Route path="/firm/:firm_id" element={<FirmDetails />} />
               <Route path="/documents" element={<Documents />} />
               <Route path="/ledger" element={<Ledger />} />
-                <Route path="/updates" element={<Updates />} />
               </Route>
             </Route>
 

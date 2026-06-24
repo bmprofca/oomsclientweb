@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PageContentSkeleton } from '../components/SkeletonComponent';
-import { Layers, Eye, Activity, Box, IndianRupee } from 'lucide-react';
+import { Eye, Activity, Box, IndianRupee, CalendarDays, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import ManagementTable from '../components/common/ManagementTable';
@@ -11,7 +11,7 @@ import Pagination, { usePagination } from '../components/common/PaginationCompon
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 
-export default function Services() {
+export default function ServiceRequests() {
   const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
 
   useEffect(() => {
@@ -26,15 +26,14 @@ export default function Services() {
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null);
 
-  const [services, setServices] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const abortControllerRef = useRef(null);
 
-  // Fetch Services
-  const fetchServices = async () => {
+  const fetchRequests = async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -42,33 +41,33 @@ export default function Services() {
 
     setIsLoading(true);
     try {
-      const typeQuery = typeFilter ? typeFilter.value : '';
-      const endpoint = `/service/list?page_no=${pagination.page}&limit=${pagination.limit}&search=${encodeURIComponent(searchQuery)}&type=${encodeURIComponent(typeQuery)}`;
+      const statusQuery = statusFilter ? statusFilter.value : '';
+      const endpoint = `/service/service-request/list?page_no=${pagination.page}&limit=${pagination.limit}&search=${encodeURIComponent(searchQuery)}&status=${encodeURIComponent(statusQuery)}`;
 
       const response = await apiCall(endpoint, 'GET', null, { signal: abortControllerRef.current.signal });
       const data = await response.json();
 
       if (response.ok && data.success !== false) {
-        setServices(data.data || []);
+        setRequests(data.data || []);
         if (data.pagination) {
           updatePagination({ total: data.pagination.total });
         }
       } else {
-        setServices([]);
+        setRequests([]);
         updatePagination({ total: 0 });
       }
       setIsLoading(false);
     } catch (error) {
       if (error.name === 'AbortError') return;
-      console.error('Failed to fetch services:', error);
-      toast.error('Failed to load services');
+      console.error('Failed to fetch service requests:', error);
+      toast.error('Failed to load service requests');
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchServices();
+      fetchRequests();
     }, 300);
 
     return () => {
@@ -78,40 +77,51 @@ export default function Services() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.limit, searchQuery, typeFilter]);
+  }, [pagination.page, pagination.limit, searchQuery, statusFilter]);
 
   const handleRefresh = () => {
-    fetchServices();
+    fetchRequests();
   };
 
   const handleViewDetails = (item) => {
-    navigate(`/service/${item.service_id}`);
+    navigate(`/service-request/${item.request_id}`);
   };
 
-  const formatType = (typeStr) => {
-    if (!typeStr) return '-';
-    return typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
+  const formatStatus = (statusStr) => {
+    if (!statusStr) return '-';
+    return statusStr.charAt(0).toUpperCase() + statusStr.slice(1);
+  };
+
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
+      case 'approved': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
+      case 'rejected': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
+      case 'completed': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+    }
   };
 
   const tableColumns = [
-    { key: 'name', label: 'Service Name', render: (row) => <span className="font-bold text-blue-900 dark:text-blue-200">{row.name}</span> },
-    { key: 'sac_code', label: 'SAC Code', render: (row) => <span>{row.sac_code || '-'}</span> },
+    { key: 'service_name', label: 'Service Name', render: (row) => <span className="font-bold text-blue-900 dark:text-blue-200">{row.service_name}</span> },
+    { key: 'firm_name', label: 'Firm', render: (row) => <span>{row.firm_name || '-'}</span> },
+    { key: 'create_date', label: 'Date', render: (row) => <span>{row.create_date ? row.create_date.split(' ')[0] : '-'}</span> },
     {
-      key: 'type',
-      label: 'Type',
+      key: 'status',
+      label: 'Status',
       render: (row) => (
-        <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${row.type === 'compliance' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-          {formatType(row.type)}
+        <span className={`px-2 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold ${getStatusColor(row.status)}`}>
+          {formatStatus(row.status)}
         </span>
       )
     },
     {
       key: 'charges',
-      label: 'Total Charges',
+      label: 'Amount',
       render: (row) => (
         <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-0.5">
           <IndianRupee size={12} />
-          {row.charges?.total || 0}
+          {row.charges?.amount || 0}
         </span>
       )
     },
@@ -127,8 +137,8 @@ export default function Services() {
   ];
 
   const handleTabChange = (tabId) => {
-    if (tabId === 'requests') {
-      navigate('/service-requests');
+    if (tabId === 'services') {
+      navigate('/services');
     }
   };
 
@@ -139,7 +149,7 @@ export default function Services() {
       accent="blue"
       onRefresh={handleRefresh}
       tabs={tabs}
-      activeTab="services"
+      activeTab="requests"
       onTabChange={handleTabChange}
       actions={null}
       summary={null}
@@ -151,16 +161,18 @@ export default function Services() {
           onViewModeChange={setViewMode}
           searchValue={searchQuery}
           onSearchChange={(val) => { setSearchQuery(val); goToPage(1); }}
-          searchPlaceholder="Search services..."
+          searchPlaceholder="Search requests..."
           filters={[
             {
-              value: typeFilter,
-              onChange: (val) => { setTypeFilter(val); goToPage(1); },
+              value: statusFilter,
+              onChange: (val) => { setStatusFilter(val); goToPage(1); },
               options: [
-                { value: 'compliance', label: 'Compliance' },
-                { value: 'general', label: 'General' }
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
+                { value: 'completed', label: 'Completed' }
               ],
-              placeholder: 'Type',
+              placeholder: 'Status',
               isClearable: true
             }
           ]}
@@ -168,16 +180,16 @@ export default function Services() {
 
         {isLoading ? (
           <PageContentSkeleton viewMode={viewMode} columns={5} rows={6} />
-        ) : services.length === 0 ? (
+        ) : requests.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 p-10 text-center flex flex-col items-center">
             <Box className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
-            <p className="text-slate-500 dark:text-slate-400 font-medium">No services found</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">No service requests found</p>
           </div>
         ) : viewMode === 'table' ? (
           <ManagementTable
             columns={tableColumns}
-            rows={services}
-            rowKey="service_id"
+            rows={requests}
+            rowKey="request_id"
             accent="blue"
             getActions={getRowActions}
             activeId={activeMenuId}
@@ -186,28 +198,30 @@ export default function Services() {
           />
         ) : (
           <ManagementGrid viewMode={viewMode}>
-            {services.map((service) => (
+            {requests.map((request) => (
               <ManagementCard
-                key={service.service_id}
-                title={service.name}
-                subtitle={`SAC: ${service.sac_code || 'N/A'}`}
+                key={request.request_id}
+                title={request.service_name}
+                subtitle={`Firm: ${request.firm_name || 'N/A'}`}
                 accent="blue"
-                icon={<Layers size={16} />}
+                icon={<Activity size={16} />}
                 badge={
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${service.type === 'compliance' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-                    {formatType(service.type)}
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${getStatusColor(request.status)}`}>
+                    {formatStatus(request.status)}
                   </span>
                 }
-                actions={getRowActions(service)}
-                menuId={`menu-${service.service_id}`}
+                actions={getRowActions(request)}
+                menuId={`menu-${request.request_id}`}
                 activeId={activeMenuId}
                 onToggle={(e, id) => setActiveMenuId(id)}
-                onClick={() => handleViewDetails(service)}
+                onClick={() => handleViewDetails(request)}
               >
                 <div className="mt-3 flex justify-between items-center text-xs border-t border-slate-100 dark:border-gray-700 pt-2">
-                  <span className="text-slate-500 flex items-center gap-1 font-medium">Charges:</span>
+                  <span className="text-slate-500 flex items-center gap-1 font-medium">
+                    <CalendarDays size={12} /> {request.create_date ? request.create_date.split(' ')[0] : '-'}
+                  </span>
                   <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-0.5">
-                    <IndianRupee size={12} />{service.charges?.total || 0}
+                    <IndianRupee size={12} />{request.charges?.amount || 0}
                   </span>
                 </div>
               </ManagementCard>
