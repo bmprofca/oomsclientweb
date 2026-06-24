@@ -60,113 +60,72 @@ function DocViewerModal({ isOpen, onClose, doc }) {
   const title    = doc.firm?.name || 'Document';
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {/* Backdrop */}
-          <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      icon={FileText}
+      size="4xl"
+      contentClassName="p-0 flex flex-col h-[70vh] bg-gray-100 dark:bg-gray-950"
+      footer={
+        <>
+          {fileUrl && (
+            <a
+              href={fileUrl}
+              download
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+            >
+              <Download size={13} /> Download
+            </a>
+          )}
+          {fileUrl && (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-medium transition-colors"
+            >
+              <ExternalLink size={13} /> Open Tab
+            </a>
+          )}
+        </>
+      }
+    >
+      <div className="flex-1 overflow-auto w-full h-full flex items-center justify-center p-4">
+        {!fileUrl ? (
+          <div className="flex flex-col items-center gap-3 text-slate-400">
+            <FileText size={48} className="opacity-30" />
+            <p className="text-sm">No file available</p>
+          </div>
+        ) : fileType === 'image' ? (
+          <img
+            src={fileUrl}
+            alt={title}
+            className="max-w-full max-h-full object-contain rounded shadow-md"
           />
-
-          {/* Panel */}
-          <motion.div
-            className="relative z-10 flex flex-col w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-gray-900"
-            style={{ height: '90vh' }}
-            initial={{ scale: 0.95, y: 20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.95, y: 20, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-          >
-            {/* Header */}
-            <div className="shrink-0">
-              <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500" />
-              <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 shrink-0">
-                    <FileText size={18} className="text-emerald-600 dark:text-emerald-400" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-800 dark:text-gray-100 truncate">{title}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {[doc.type?.toUpperCase(), doc.f_year, doc.month].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {fileUrl && (
-                    <a
-                      href={fileUrl}
-                      download
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
-                    >
-                      <Download size={13} /> Download
-                    </a>
-                  )}
-                  {fileUrl && (
-                    <a
-                      href={fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-medium transition-colors"
-                    >
-                      <ExternalLink size={13} /> Open Tab
-                    </a>
-                  )}
-                  <button
-                    onClick={onClose}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950 flex items-center justify-center">
-              {!fileUrl ? (
-                <div className="flex flex-col items-center gap-3 text-slate-400">
-                  <FileText size={48} className="opacity-30" />
-                  <p className="text-sm">No file available</p>
-                </div>
-              ) : fileType === 'image' ? (
-                <img
-                  src={fileUrl}
-                  alt={title}
-                  className="max-w-full max-h-full object-contain rounded shadow-md"
-                />
-              ) : fileType === 'pdf' ? (
-                <iframe
-                  src={fileUrl}
-                  title={title}
-                  className="w-full h-full border-0"
-                />
-              ) : (
-                /* Fallback: try object tag, then link */
-                <div className="flex flex-col items-center gap-4 text-slate-500 dark:text-slate-400">
-                  <FileText size={56} className="opacity-20" />
-                  <p className="text-sm font-medium">Preview not available for this file type.</p>
-                  <a
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
-                  >
-                    <ExternalLink size={14} /> Open in new tab
-                  </a>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        ) : fileType === 'pdf' ? (
+          <iframe
+            src={fileUrl}
+            title={title}
+            className="w-full h-full border-0"
+          />
+        ) : (
+          /* Fallback: try object tag, then link */
+          <div className="flex flex-col items-center gap-4 text-slate-500 dark:text-slate-400">
+            <FileText size={56} className="opacity-20" />
+            <p className="text-sm font-medium">Preview not available for this file type.</p>
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+            >
+              <ExternalLink size={14} /> Open in new tab
+            </a>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 
