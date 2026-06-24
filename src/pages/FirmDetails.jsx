@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DetailSkeleton } from '../components/SkeletonComponent';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Building2, Wrench, IndianRupee,
   CalendarDays, Clock, FileText, Tag, MapPin, Map,
-  User, CheckCircle, XCircle, AlertCircle, Loader2
+  User, CheckCircle, XCircle, AlertCircle, Loader2, RefreshCw
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 
@@ -85,31 +86,40 @@ export default function FirmDetails() {
   const [firm, setFirm] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const fetchedFirmIdRef = useRef(null);
+
+  const fetchDetails = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiCall(`/firm/details/${firm_id}`, 'GET');
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        setFirm(data.data);
+      } else {
+        setError(data.message || 'Failed to load firm details');
+        toast.error(data.message || 'Failed to load firm details');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong. Please try again.');
+      toast.error('Failed to load firm details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await apiCall(`/firm/details/${firm_id}`, 'GET');
-        const data = await response.json();
-        if (response.ok && data.success !== false) {
-          setFirm(data.data);
-        } else {
-          setError(data.message || 'Failed to load firm details');
-          toast.error(data.message || 'Failed to load firm details');
-        }
-      } catch (err) {
-        console.error(err);
-        setError('Something went wrong. Please try again.');
-        toast.error('Failed to load firm details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (firm_id) fetchDetails();
+    if (firm_id && fetchedFirmIdRef.current !== firm_id) {
+      fetchedFirmIdRef.current = firm_id;
+      fetchDetails();
+    }
   }, [firm_id]);
+
+  const handleRefresh = () => {
+    fetchDetails();
+  };
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -143,23 +153,40 @@ export default function FirmDetails() {
     <div className="mx-auto space-y-6">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Firm Details</p>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
-              {firm?.firm_name || 'Firm'}
-            </h1>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{firm.firm_id}</p>
+      <motion.div
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative mb-2 md:mb-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-4 shadow-sm shadow-slate-200/40 dark:shadow-none backdrop-blur"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pr-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Firm Details</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+                {firm?.firm_name || 'Firm'}
+              </h1>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{firm?.firm_id}</p>
+            </div>
           </div>
         </div>
-      </div>
+        
+        {/* Refresh Button */}
+        <button
+          onClick={handleRefresh}
+          className="absolute top-[10px] right-[10px] flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          title="Refresh"
+        >
+          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </motion.div>
 
       {/* ── Status strip ── */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">

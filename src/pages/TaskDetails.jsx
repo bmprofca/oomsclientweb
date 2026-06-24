@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DetailSkeleton } from '../components/SkeletonComponent';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckSquare, ArrowLeft, Building2, Wrench, IndianRupee,
   CalendarDays, Clock, Upload, Users, Receipt,
-  BadgeCheck, AlertCircle, Loader2, FileText, Tag
+  BadgeCheck, AlertCircle, Loader2, FileText, Tag,
+  History, X, User, Mail, Phone, RefreshCw
 } from 'lucide-react';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +44,16 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+/** Returns the dot colour class for a status string */
+const dotColor = (status = '') => {
+  const s = status.toLowerCase();
+  if (s.includes('complete')) return 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-900/40';
+  if (s.includes('pending'))  return 'bg-amber-500  ring-amber-100  dark:ring-amber-900/40';
+  if (s.includes('progress')) return 'bg-blue-500   ring-blue-100   dark:ring-blue-900/40';
+  if (s.includes('cancel'))   return 'bg-red-500    ring-red-100    dark:ring-red-900/40';
+  return 'bg-slate-400 ring-slate-100 dark:ring-slate-700';
+};
+
 const InfoRow = ({ label, value, icon: Icon }) => (
   <div className="flex items-start gap-3 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
     {Icon && (
@@ -58,10 +70,10 @@ const InfoRow = ({ label, value, icon: Icon }) => (
 
 const Section = ({ title, icon: Icon, accent = 'amber', children }) => {
   const accents = {
-    amber: 'border-amber-400 text-amber-600 dark:text-amber-400',
-    indigo: 'border-indigo-400 text-indigo-600 dark:text-indigo-400',
+    amber:   'border-amber-400 text-amber-600 dark:text-amber-400',
+    indigo:  'border-indigo-400 text-indigo-600 dark:text-indigo-400',
     emerald: 'border-emerald-400 text-emerald-600 dark:text-emerald-400',
-    slate: 'border-slate-400 text-slate-500 dark:text-slate-400',
+    slate:   'border-slate-400 text-slate-500 dark:text-slate-400',
   };
   return (
     <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
@@ -74,6 +86,137 @@ const Section = ({ title, icon: Icon, accent = 'amber', children }) => {
   );
 };
 
+// ── Status Log Modal ────────────────────────────────────────────────────────────
+
+function StatusLogModal({ isOpen, onClose, logs = [] }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Backdrop */}
+          <motion.div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Panel */}
+          <motion.div
+            className="relative z-10 w-full max-w-md flex flex-col rounded-xl shadow-2xl bg-white dark:bg-slate-900 overflow-hidden"
+            style={{ maxHeight: '85vh' }}
+            initial={{ scale: 0.95, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.95, y: 20, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          >
+            {/* Header */}
+            <div className="shrink-0">
+              <div className="h-1 bg-gradient-to-r from-amber-500 via-orange-400 to-yellow-400" />
+              <div className="flex items-center justify-between px-5 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                    <History size={16} className="text-amber-600 dark:text-amber-400" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Status History</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">{logs.length} event{logs.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Timeline body */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-5">
+              {logs.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-slate-400">
+                  <History size={36} className="opacity-25" />
+                  <p className="text-sm font-medium">No status history yet</p>
+                </div>
+              ) : (
+                <ol className="relative">
+                  {logs.map((log, idx) => {
+                    const isLast = idx === logs.length - 1;
+                    const by = log.create_by || {};
+                    return (
+                      <motion.li
+                        key={idx}
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.06 }}
+                        className="relative pl-8 pb-6 last:pb-0"
+                      >
+                        {/* Vertical line */}
+                        {!isLast && (
+                          <div className="absolute left-[11px] top-5 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                        )}
+
+                        {/* Dot */}
+                        <span
+                          className={`absolute left-0 top-1.5 h-[22px] w-[22px] rounded-full ring-4 flex items-center justify-center ${dotColor(log.status)}`}
+                        >
+                          <span className="h-2 w-2 rounded-full bg-white opacity-80" />
+                        </span>
+
+                        {/* Content card */}
+                        <div className="ml-1 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3 space-y-2">
+                          {/* Status + date */}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <StatusBadge status={log.status} />
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                              {formatDateTime(log.create_date)}
+                            </span>
+                          </div>
+
+                          {/* Who changed it */}
+                          {by.name && (
+                            <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
+                              <div className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                {by.name[0].toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{by.name}</p>
+                                {by.mobile && (
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-0.5">
+                                    <Phone size={9} /> {by.country_code ? `+${by.country_code} ` : ''}{by.mobile}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="shrink-0 flex justify-end px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ── main component ─────────────────────────────────────────────────────────────
 
 export default function TaskDetails() {
@@ -83,31 +226,41 @@ export default function TaskDetails() {
   const [task, setTask] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showStatusLog, setShowStatusLog] = useState(false);
+  
+  const fetchedTaskIdRef = useRef(null);
+
+  const fetchDetails = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiCall(`/task/details/${task_id}`, 'GET');
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        setTask(data.data);
+      } else {
+        setError(data.message || 'Failed to load task details');
+        toast.error(data.message || 'Failed to load task details');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong. Please try again.');
+      toast.error('Failed to load task details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await apiCall(`/task/details/${task_id}`, 'GET');
-        const data = await response.json();
-        if (response.ok && data.success !== false) {
-          setTask(data.data);
-        } else {
-          setError(data.message || 'Failed to load task details');
-          toast.error(data.message || 'Failed to load task details');
-        }
-      } catch (err) {
-        console.error(err);
-        setError('Something went wrong. Please try again.');
-        toast.error('Failed to load task details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (task_id) fetchDetails();
+    if (task_id && fetchedTaskIdRef.current !== task_id) {
+      fetchedTaskIdRef.current = task_id;
+      fetchDetails();
+    }
   }, [task_id]);
+
+  const handleRefresh = () => {
+    fetchDetails();
+  };
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -135,29 +288,60 @@ export default function TaskDetails() {
     );
   }
 
-  const { firm, service, charges, dates, billing, staffs, status, billing_status, is_recurring } = task;
+  const { firm, service, charges, dates, billing, staffs, status, billing_status, is_recurring, status_log = [] } = task;
 
   return (
     <div className="mx-auto space-y-6">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">Task Details</p>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
-              {service?.name || 'Task'}
-            </h1>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{task.task_id}</p>
+      <motion.div
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative mb-2 md:mb-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-4 shadow-sm shadow-slate-200/40 dark:shadow-none backdrop-blur"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pr-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">Task Details</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+                {service?.name || 'Task'}
+              </h1>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{task?.task_id}</p>
+            </div>
           </div>
+
+          {/* Status Log button */}
+          <button
+            onClick={() => setShowStatusLog(true)}
+            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all shadow-sm"
+          >
+            <History size={15} />
+            Status Log
+            {status_log.length > 0 && (
+              <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                {status_log.length}
+              </span>
+            )}
+          </button>
         </div>
-      </div>
+
+        {/* Refresh Button */}
+        <button
+          onClick={handleRefresh}
+          className="absolute top-[10px] right-[10px] flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          title="Refresh"
+        >
+          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </motion.div>
 
       {/* ── Status strip ── */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -287,6 +471,13 @@ export default function TaskDetails() {
 
         </div>
       </div>
+
+      {/* ── Status Log Modal ── */}
+      <StatusLogModal
+        isOpen={showStatusLog}
+        onClose={() => setShowStatusLog(false)}
+        logs={status_log}
+      />
     </div>
   );
 }
