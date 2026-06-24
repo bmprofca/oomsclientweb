@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   IndianRupee, Users, ClipboardList,
   Download, FileText, Eye, X, ExternalLink,
@@ -193,8 +194,17 @@ function DocCard({ doc, activeCategory, onView, onDownload }) {
 }
 
 /* ─── Main Component ─────────────────────────────────────── */
-export default function OutputDocs() {
-  const [activeCategory, setActiveCategory] = useState('gst');
+export default function OutputDocs({ refreshTrigger }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeCategory = searchParams.get('category') || 'gst';
+
+  const setActiveCategory = (categoryId) => {
+    setSearchParams(prev => {
+      prev.set('category', categoryId);
+      return prev;
+    });
+  };
+
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
 
   const [documents, setDocuments] = useState([]);
@@ -356,7 +366,7 @@ export default function OutputDocs() {
       clearTimeout(timer);
       if (docsAbortRef.current) docsAbortRef.current.abort();
     };
-  }, [fetchDocuments]);
+  }, [fetchDocuments, refreshTrigger]);
 
   /* ── Handlers ── */
   const handleCategoryChange = (categoryId) => {

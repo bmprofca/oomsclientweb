@@ -96,7 +96,7 @@ function DocViewerModal({ isOpen, onClose, doc }) {
   );
 }
 
-export default function SharableDocs() {
+export default function SharableDocs({ refreshTrigger }) {
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   
   const [documents, setDocuments] = useState([]);
@@ -232,7 +232,7 @@ export default function SharableDocs() {
       clearTimeout(timer);
       if (docsAbortRef.current) docsAbortRef.current.abort();
     };
-  }, [fetchDocuments]);
+  }, [fetchDocuments, refreshTrigger]);
 
   // Upload Document
   const handleFileSelect = async (file) => {

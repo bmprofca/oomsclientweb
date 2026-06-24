@@ -57,16 +57,16 @@ export default function ManagementHub({
           transition={{ duration: 0.4 }}
           className="mb-2 md:mb-4 rounded-md border border-slate-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 p-2 shadow-sm shadow-slate-200/40 dark:shadow-none backdrop-blur md:p-3"
         >
-          <div className="flex flex-col gap-1 md:gap-2 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
+          <div className="flex flex-col gap-1 md:gap-2 lg:flex-row lg:items-end lg:justify-between relative">
+            <div className="max-w-3xl pr-20 lg:pr-0">
               {title && <h1 className="mt-1 text-lg font-bold flex-wrap whitespace-nowrap text-slate-900 dark:text-gray-100 md:text-xl">{title}</h1>}
               {description && <p className="mt-0.5 text-xs text-slate-500 dark:text-gray-400">{description}</p>}
             </div>
 
             {(summary || actions || onRefresh) && (
-              <div className="flex flex-wrap items-center justify-between w-full gap-1.5">
+              <div className="flex flex-wrap items-center justify-between w-full lg:w-auto gap-1.5 mt-2 lg:mt-0">
                 {summary}
-                <div className="flex w-full items-center justify-end gap-1.5">
+                <div className="absolute top-1.5 right-1.5 lg:relative lg:top-auto lg:right-auto flex items-center justify-end gap-1.5">
                   {onRefresh && (
                     <RefreshButton
                       type="button"
@@ -79,7 +79,6 @@ export default function ManagementHub({
                   )}
                   {actions}
                 </div>
-
               </div>
             )}
           </div>

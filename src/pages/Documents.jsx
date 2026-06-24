@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ManagementHub from '../components/common/ManagementHub';
 import OutputDocs from '../components/documents/OutputDocs';
 import SharableDocs from '../components/documents/SharableDocs';
 
 export default function Documents() {
-  const [activeTab, setActiveTab] = useState('output');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'output';
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleTabChange = (tab) => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    });
+  };
 
   return (
     <ManagementHub
       title="Documents Management"
       description="View, manage, and share documents across all firms and services."
       accent="indigo"
-      onRefresh={null}
+      onRefresh={() => setRefreshTrigger(prev => prev + 1)}
       actions={null}
       summary={null}
     >
@@ -19,7 +29,7 @@ export default function Documents() {
         {/* Tabs Navigation */}
         <div className="flex space-x-1 border-b border-gray-200 dark:border-gray-700 mb-4">
           <button
-            onClick={() => setActiveTab('output')}
+            onClick={() => handleTabChange('output')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'output'
                 ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
@@ -29,7 +39,7 @@ export default function Documents() {
             Output Docs
           </button>
           <button
-            onClick={() => setActiveTab('sharable')}
+            onClick={() => handleTabChange('sharable')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'sharable'
                 ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
@@ -42,8 +52,8 @@ export default function Documents() {
 
         {/* Tab Content */}
         <div>
-          {activeTab === 'output' && <OutputDocs />}
-          {activeTab === 'sharable' && <SharableDocs />}
+          {activeTab === 'output' && <OutputDocs refreshTrigger={refreshTrigger} />}
+          {activeTab === 'sharable' && <SharableDocs refreshTrigger={refreshTrigger} />}
         </div>
       </div>
     </ManagementHub>
