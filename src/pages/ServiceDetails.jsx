@@ -3,8 +3,9 @@ import { DetailSkeleton } from '../components/SkeletonComponent';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Layers, IndianRupee, Clock, FileText, Tag,
-  AlertCircle, Loader2, Wrench, Globe, CalendarDays, CheckCircle, XCircle
+  AlertCircle, Loader2, Wrench, Globe, CalendarDays, CheckCircle, XCircle, RefreshCw
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 
@@ -80,36 +81,40 @@ export default function ServiceDetails() {
   const [error, setError] = useState(null);
 
   const abortControllerRef = useRef(null);
+  const fetchedServiceIdRef = useRef(null);
+
+  const fetchDetails = async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiCall(`/service/details/${service_id}`, 'GET', null, { signal: abortControllerRef.current.signal });
+      const data = await response.json();
+      if (response.ok && data.success !== false) {
+        setServiceDetails(data.data);
+      } else {
+        setError(data.message || 'Failed to load service details');
+        toast.error(data.message || 'Failed to load service details');
+      }
+      setIsLoading(false);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error(err);
+      setError('Something went wrong. Please try again.');
+      toast.error('Failed to load service details');
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      abortControllerRef.current = new AbortController();
-
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await apiCall(`/service/details/${service_id}`, 'GET', null, { signal: abortControllerRef.current.signal });
-        const data = await response.json();
-        if (response.ok && data.success !== false) {
-          setServiceDetails(data.data);
-        } else {
-          setError(data.message || 'Failed to load service details');
-          toast.error(data.message || 'Failed to load service details');
-        }
-        setIsLoading(false);
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-        console.error(err);
-        setError('Something went wrong. Please try again.');
-        toast.error('Failed to load service details');
-        setIsLoading(false);
-      }
-    };
-
-    if (service_id) fetchDetails();
+    if (service_id && fetchedServiceIdRef.current !== service_id) {
+      fetchedServiceIdRef.current = service_id;
+      fetchDetails();
+    }
 
     return () => {
       if (abortControllerRef.current) {
@@ -117,6 +122,10 @@ export default function ServiceDetails() {
       }
     };
   }, [service_id]);
+
+  const handleRefresh = () => {
+    fetchDetails();
+  };
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -150,23 +159,40 @@ export default function ServiceDetails() {
     <div className="mx-auto space-y-6">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">Service Details</p>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
-              {serviceDetails?.name || 'Service'}
-            </h1>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{serviceDetails.service_id}</p>
+      <motion.div
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative mb-2 md:mb-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-4 shadow-sm shadow-slate-200/40 dark:shadow-none backdrop-blur"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pr-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">Service Details</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+                {serviceDetails?.name || 'Service'}
+              </h1>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{serviceDetails?.service_id}</p>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Refresh Button */}
+        <button
+          onClick={handleRefresh}
+          className="absolute top-[10px] right-[10px] flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          title="Refresh"
+        >
+          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </motion.div>
 
       {/* ── Status strip ── */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
