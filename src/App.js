@@ -19,6 +19,7 @@ import Updates from "./pages/updates";
 import TaskDetails from "./pages/TaskDetails";
 import FirmDetails from "./pages/FirmDetails";
 import ServiceDetails from "./pages/ServiceDetails";
+import Support from "./pages/Support";
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
               <Route path="/documents" element={<Documents />} />
               <Route path="/ledger" element={<Ledger />} />
                 <Route path="/updates" element={<Updates />} />
+                <Route path="/support" element={<Support />} />
               </Route>
             </Route>
 

@@ -122,13 +122,23 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
               })}
             </nav>
 
-            {/* Help Section */}
+            {/* Help Section (Mobile) */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-4">
-                <LifeBuoy className="text-blue-600 dark:text-blue-400 mb-2" size={20} />
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Need Help?</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Contact our support team</p>
-              </div>
+              <Link
+                to="/support"
+                onClick={() => toggleSidebar()}
+                className="block bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-4 hover:shadow-md transition-shadow duration-200 group"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <LifeBuoy className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200" size={20} />
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    Need Help?
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Contact our support team
+                </p>
+              </Link>
             </div>
           </div>
         </div>
@@ -210,20 +220,27 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       onMouseLeave={handleMouseLeave}
     >
       <div className="flex flex-col h-full">
-
-
         <nav className="flex-1 py-6 px-2">
           {menuItems.map((item) => renderMenuItem(item, isSidebarExpanded))}
         </nav>
 
-        {/* Footer Section */}
+        {/* Footer Section (Desktop) - only when expanded */}
         {isSidebarExpanded && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-3">
-              <LifeBuoy className="text-blue-600 dark:text-blue-400 mb-2" size={16} />
-              <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">Need Help?</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Support</p>
-            </div>
+            <Link
+              to="/support"
+              className="block bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md p-3 hover:shadow-sm transition-all duration-200 group"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <LifeBuoy className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200" size={16} />
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  Need Help?
+                </p>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Contact our support team
+              </p>
+            </Link>
           </div>
         )}
       </div>

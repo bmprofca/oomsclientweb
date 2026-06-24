@@ -9,7 +9,8 @@ import {
   LogOut,
   Sun,
   Moon,
-  Users
+  Users,
+  LifeBuoy
 } from 'lucide-react';
 
 import { useTheme } from '../../contexts/ThemeContext';
@@ -159,6 +160,14 @@ const Navbar = ({
                       >
                         <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         My Profile
+                      </button>
+
+                      <button
+                        onClick={() => { setOpenDropdown(false); navigate('/support'); }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                      >
+                        <LifeBuoy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        Help & Support
                       </button>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
