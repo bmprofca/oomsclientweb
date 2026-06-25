@@ -40,7 +40,7 @@ export default function ManagementCard({
   const cardBody = (
     <div
       className={joinClasses(
-        'rounded-md border bg-white dark:bg-gray-800 p-2.5 shadow-sm transition-all duration-300 flex flex-col h-full',
+        'rounded-md border bg-white dark:bg-gray-800 p-2 sm:p-2.5 shadow-sm transition-all duration-300 flex flex-col h-full text-xs sm:text-sm',
         accentMap[accent] || accentMap.slate,
         hoverable && 'hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-gray-900/50',
         onClick && 'cursor-pointer',
@@ -52,10 +52,10 @@ export default function ManagementCard({
         <div className="mb-2 flex items-start justify-between gap-1.5">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              {icon && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-gray-300">{icon}</span>}
+              {icon && <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-gray-300">{icon}</span>}
               <div className="min-w-0">
-                {title && <h3 className="truncate text-[13px] font-bold text-slate-900 dark:text-gray-100">{title}</h3>}
-                {subtitle && <p className="text-[11px] text-slate-500 dark:text-gray-400">{subtitle}</p>}
+                {title && <h3 className="truncate text-[11px] sm:text-[13px] font-bold text-slate-900 dark:text-gray-100">{title}</h3>}
+                {subtitle && <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-gray-400">{subtitle}</p>}
               </div>
             </div>
           </div>

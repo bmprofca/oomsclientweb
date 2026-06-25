@@ -83,12 +83,12 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
     return (
       <>
         <div className={`
-          fixed left-0 top-16 z-30 w-72 h-[calc(100vh-4rem)]
+          fixed left-0 top-12 sm:top-16 z-30 w-60 sm:w-64 h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)]
           bg-white dark:bg-gray-900 transform transition-transform duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           overflow-y-auto overflow-x-hidden shadow-2xl dark:shadow-gray-950/50
         `}>
-          <div className="p-4">
+          <div className="p-3 pb-24">
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const isActive = isActiveRoute(item.path);
@@ -100,7 +100,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
                     to={item.path}
                     onClick={() => toggleSidebar()}
                     className={`
-                      flex items-center px-3 py-3 rounded-md transition-all duration-200 mb-1
+                      flex items-center px-2.5 py-2.5 rounded-md transition-all duration-200 mb-1
                       ${isActive
                         ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-700 dark:text-blue-400'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400'
@@ -108,7 +108,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
                     `}
                   >
                     <div className={`
-                      p-2 rounded-md mr-3
+                      p-1.5 rounded-md mr-2.5
                       ${isActive
                         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
@@ -123,11 +123,11 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
             </nav>
 
             {/* Help Section (Mobile) */}
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <Link
                 to="/support"
                 onClick={() => toggleSidebar()}
-                className="block bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-4 hover:shadow-md transition-shadow duration-200 group"
+                className="block bg-gradient-to-r mt-3 from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-3 hover:shadow-md transition-shadow duration-200 group"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <LifeBuoy className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200" size={20} />

@@ -71,8 +71,8 @@ export default function ManagementTable({
   const serialNoColumn = {
     key: '__serialNo__',
     label: 'SN',
-    headerClassName: 'w-14 text-center',
-    className: 'w-14 text-center',
+    headerClassName: 'w-16 text-center !px-2',
+    className: 'w-16 text-center !px-2',
     render: (row, index) => {
       if (typeof renderSerialNo === 'function') {
         return renderSerialNo(row, index);
@@ -125,12 +125,12 @@ export default function ManagementTable({
     >
       <div className={joinClasses('w-full', responsive === 'scroll' ? 'overflow-x-auto' : 'overflow-hidden', tableClassName)}>
         <table className={joinClasses(
-          'w-full text-sm text-gray-700 dark:text-gray-300',
+          'w-full text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap',
           responsive === 'scroll' ? 'min-w-[640px] table-auto' : 'table-fixed text-left',
           tableClassName
         )}>
           {showHeader && (
-            <thead className={joinClasses('bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-800/50 text-xs uppercase text-gray-600 dark:text-gray-400', headerClassName)}>
+            <thead className={joinClasses('bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-800/50 text-[10px] sm:text-xs uppercase text-gray-600 dark:text-gray-400', headerClassName)}>
               <tr>
                 {visibleColumns.map((column) => (
                   <th

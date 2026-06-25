@@ -113,7 +113,7 @@ export default function ServiceRequests() {
       const response = await apiCall(`/firm/list?page_no=1&limit=50&search=${encodeURIComponent(search)}`, 'GET');
       const data = await response.json();
       if (response.ok && data.success !== false) {
-        setFirmOptions((data.data || []).map(f => ({ label: f.firm_name, value: f.firm_id })));
+        setFirmOptions((data.data || []).map(f => ({ label: f.firm_name, value: f.firm_id, original: f })));
       }
     } catch (e) {
       console.error(e);
@@ -136,10 +136,10 @@ export default function ServiceRequests() {
   const fetchServices = async (search = '') => {
     setServiceIsLoading(true);
     try {
-      const response = await apiCall(`/service/list?page_no=1&limit=50&search=${encodeURIComponent(search)}`, 'GET');
+      const response = await apiCall(`/service/list?page_no=1&limit=50&search=${encodeURIComponent(search)}&type=general`, 'GET');
       const data = await response.json();
       if (response.ok && data.success !== false) {
-        setServiceOptions((data.data || []).map(s => ({ label: s.name, value: s.service_id })));
+        setServiceOptions((data.data || []).map(s => ({ label: s.name, value: s.service_id, original: s })));
       }
     } catch (e) {
       console.error(e);
@@ -361,16 +361,10 @@ export default function ServiceRequests() {
         onClose={() => !isCreating && setIsCreateModalOpen(false)}
         title="Create Service Request"
         icon={Plus}
-        size="lg"
+        size="3xl"
         footer={
           <>
-            <button
-              onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
-              disabled={isCreating}
-            >
-              Cancel
-            </button>
+            
             <button
               onClick={handleCreateRequest}
               disabled={isCreating || !selectedFormFirm || !selectedFormService}
@@ -396,6 +390,14 @@ export default function ServiceRequests() {
               onMenuOpen={handleFirmMenuOpen}
               onInputChange={handleFirmInputChange}
             />
+            {selectedFormFirm && selectedFormFirm.original && (
+              <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-slate-500">Type:</span> <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{selectedFormFirm.original.firm_type?.replace(/_/g, ' ')}</span></div>
+                  <div><span className="text-slate-500">Status:</span> <span className="font-medium text-slate-700 dark:text-slate-300">{selectedFormFirm.original.status ? 'Active' : 'Inactive'}</span></div>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -411,6 +413,21 @@ export default function ServiceRequests() {
               onMenuOpen={handleServiceMenuOpen}
               onInputChange={handleServiceInputChange}
             />
+            {selectedFormService && selectedFormService.original && (
+              <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-slate-500">SAC Code:</span> <span className="font-medium text-slate-700 dark:text-slate-300">{selectedFormService.original.sac_code || '-'}</span></div>
+                  <div><span className="text-slate-500">Type:</span> <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{selectedFormService.original.type}</span></div>
+                  <div className="col-span-2 flex items-center pt-2 border-t border-slate-200 dark:border-slate-700 mt-1">
+                    <span className="text-slate-500">Total Charges:</span> 
+                    <span className="ml-1 font-bold text-slate-700 dark:text-slate-300 flex items-center">
+                      <IndianRupee size={12} className="ml-1 mr-0.5" />
+                      {selectedFormService.original.charges?.total || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
