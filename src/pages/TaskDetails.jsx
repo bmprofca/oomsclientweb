@@ -300,7 +300,7 @@ export default function TaskDetails() {
         transition={{ duration: 0.4 }}
         className="relative mb-2 md:mb-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-4 shadow-sm shadow-slate-200/40 dark:shadow-none backdrop-blur"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pr-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pr-24 sm:pr-10">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
@@ -308,39 +308,43 @@ export default function TaskDetails() {
             >
               <ArrowLeft size={16} />
             </button>
-            <div>
+            <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">Task Details</p>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate">
                 {service?.name || 'Task'}
               </h1>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{task?.task_id}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono truncate">{task?.task_id}</p>
             </div>
           </div>
+        </div>
 
+        {/* Actions */}
+        <div className="absolute top-[10px] right-[10px] flex items-center gap-2">
           {/* Status Log button */}
           <button
             onClick={() => setShowStatusLog(true)}
-            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all shadow-sm"
+            title="Status Log"
           >
             <History size={15} />
-            Status Log
+            <span className="hidden sm:inline">Status Log</span>
             {status_log.length > 0 && (
               <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
                 {status_log.length}
               </span>
             )}
           </button>
-        </div>
 
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefresh}
-          className="absolute top-[10px] right-[10px] flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
-          title="Refresh"
-        >
-          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+            title="Refresh"
+          >
+            <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* ── Status strip ── */}
