@@ -5,7 +5,6 @@ import {
     FaChevronRight,
     FaAngleDoubleLeft,
     FaAngleDoubleRight,
-    FaLevelDownAlt
 } from 'react-icons/fa';
 import SelectField from './SelectField';
 
@@ -170,7 +169,7 @@ const Pagination = ({
                 {/* Go to page */}
                 <div className="flex items-center gap-1.5">
                     <span className="text-xs text-slate-500 dark:text-gray-400 font-medium">Go to:</span>
-                    <form onSubmit={handleJump} className="relative group">
+                    <form onSubmit={handleJump}>
                         <input
                             type="text"
                             inputMode="numeric"
@@ -179,14 +178,13 @@ const Pagination = ({
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 setJumpPage(val);
                             }}
-                            className="w-14 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-md px-2 py-1 pr-7 text-xs font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
+                            onBlur={handleJump}
+                            style={{
+                                width: `calc(${Math.max(1, (jumpPage || '').length)}ch + 2rem)`,
+                                height: '32px',
+                            }}
+                            className="min-w-0 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-md px-2 text-xs font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
                         />
-                        <button
-                            type="submit"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all opacity-0 group-focus-within:opacity-100"
-                        >
-                            <FaLevelDownAlt size={8} className="rotate-90" />
-                        </button>
                     </form>
                     <span className="text-xs text-slate-500 dark:text-gray-400">of <span className="text-slate-900 dark:text-gray-100 font-bold">{totalPages}</span></span>
                 </div>
@@ -209,7 +207,7 @@ const Pagination = ({
                 )}
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-500 dark:text-gray-400 font-medium">Go to:</span>
-                    <form onSubmit={handleJump} className="relative group">
+                    <form onSubmit={handleJump}>
                         <input
                             type="text"
                             inputMode="numeric"
@@ -218,15 +216,13 @@ const Pagination = ({
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 setJumpPage(val);
                             }}
-                            placeholder="Page No"
-                            className="w-full bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-md px-3 py-1.5 pr-10 text-sm font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
+                            onBlur={handleJump}
+                            style={{
+                                width: `calc(${Math.max(1, (jumpPage || '').length)}ch + 2.5rem)`,
+                                height: '42px',
+                            }}
+                            className="min-w-0 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-md px-3 text-sm font-bold text-slate-700 dark:text-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-center"
                         />
-                        <button
-                            type="submit"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all opacity-0 group-focus-within:opacity-100"
-                        >
-                            <FaLevelDownAlt size={10} className="rotate-90" />
-                        </button>
                     </form>
                     <span className="text-sm text-slate-500 dark:text-gray-400 font-medium">of <span className="text-slate-900 dark:text-gray-100 font-bold">{totalPages}</span> pages</span>
                 </div>
