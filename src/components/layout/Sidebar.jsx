@@ -82,7 +82,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           overflow-y-auto overflow-x-hidden shadow-2xl dark:shadow-gray-950/50
         `}>
-          <div className="p-4">
+          <div className="p-4 pb-28">
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const isActive = isActiveRoute(item.path);
@@ -117,11 +117,11 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
             </nav>
 
             {/* Help Section (Mobile) */}
-            <div className="absolute bottom-0 mb-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <Link
                 to="/support"
                 onClick={() => toggleSidebar()}
-                className="block bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-4 hover:shadow-md transition-shadow duration-200 group"
+                className="block bg-gradient-to-r mt-4 from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-md p-4 hover:shadow-md transition-shadow duration-200 group"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <LifeBuoy className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200" size={20} />
