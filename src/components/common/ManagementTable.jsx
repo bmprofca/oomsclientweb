@@ -71,8 +71,8 @@ export default function ManagementTable({
   const serialNoColumn = {
     key: '__serialNo__',
     label: 'SN',
-    headerClassName: 'w-14 text-center',
-    className: 'w-14 text-center',
+    headerClassName: 'w-16 text-center !px-2',
+    className: 'w-16 text-center !px-2',
     render: (row, index) => {
       if (typeof renderSerialNo === 'function') {
         return renderSerialNo(row, index);

@@ -299,7 +299,22 @@ export default function ServiceDetails() {
           <Section title="Service Properties" icon={Wrench} accent="slate">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
               <InfoRow label="Default Amount" value={service?.default_amount} icon={IndianRupee} />
-              <InfoRow label="Required Fields" value={service?.required_fields} icon={FileText} />
+              <InfoRow 
+                label="Required Fields" 
+                badge={
+                  Array.isArray(service?.required_fields) && service.required_fields.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {service.required_fields.map((f, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                          {f.label || f.key}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null
+                }
+                value={(!service?.required_fields || service.required_fields.length === 0) ? '—' : null}
+                icon={FileText} 
+              />
               <InfoRow label="Service Remark" value={service?.remark} icon={FileText} />
               <InfoRow label="Branch Remark" value={branch?.remark} icon={FileText} />
             </div>
