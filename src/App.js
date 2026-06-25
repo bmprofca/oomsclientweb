@@ -20,6 +20,7 @@ import FirmDetails from "./pages/FirmDetails";
 import ServiceDetails from "./pages/ServiceDetails";
 import ServiceRequests from "./pages/ServiceRequests";
 import ServiceRequestDetails from "./pages/ServiceRequestDetails";
+import Support from "./pages/Support";
 
 function App() {
   return (
@@ -28,39 +29,40 @@ function App() {
         <AuthProvider>
           <ToastProvider>
             <Routes>
-            {/* Redirect Root to Login */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Redirect Root to Login */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login />} />
 
-            {/* Server Unreachable Route */}
-            <Route path="/server-error" element={<ServerUnreachable />} />
+              {/* Server Unreachable Route */}
+              <Route path="/server-error" element={<ServerUnreachable />} />
 
-            {/* Routes with MainLayout protected by auth */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<MainLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/service/:service_id" element={<ServiceDetails />} />
-              <Route path="/service-requests" element={<ServiceRequests />} />
-              <Route path="/service-request/:request_id" element={<ServiceRequestDetails />} />
-              <Route path="/tasks" element={<Task />} />
-              <Route path="/tasks/ongoing" element={<Task />} />
-              <Route path="/tasks/completed" element={<Task />} />
-              <Route path="/task/:task_id" element={<TaskDetails />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/firms" element={<Firms />} />
-              <Route path="/firm/:firm_id" element={<FirmDetails />} />
-              <Route path="/documents" element={<Documents />} />
-              <Route path="/ledger" element={<Ledger />} />
+              {/* Routes with MainLayout protected by auth */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/service/:service_id" element={<ServiceDetails />} />
+                  <Route path="/service-requests" element={<ServiceRequests />} />
+                  <Route path="/service-request/:request_id" element={<ServiceRequestDetails />} />
+                  <Route path="/tasks" element={<Task />} />
+                  <Route path="/tasks/ongoing" element={<Task />} />
+                  <Route path="/tasks/completed" element={<Task />} />
+                  <Route path="/task/:task_id" element={<TaskDetails />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/firms" element={<Firms />} />
+                  <Route path="/firm/:firm_id" element={<FirmDetails />} />
+                  <Route path="/documents" element={<Documents />} />
+                  <Route path="/ledger" element={<Ledger />} />
+                  <Route path="/Support" element={<Support />} />
+                </Route>
               </Route>
-            </Route>
 
-            {/* 404 Not Found Route */}
-            <Route path="/404" element={<NotFound />} />
+              {/* 404 Not Found Route */}
+              <Route path="/404" element={<NotFound />} />
 
-            {/* Catch all route - redirect to 404 */}
-            <Route path="*" element={<Navigate to="/404" replace />} />
+              {/* Catch all route - redirect to 404 */}
+              <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>
           </ToastProvider>
         </AuthProvider>
