@@ -438,6 +438,7 @@ export default function SharableDocs({ refreshTrigger, onUploadClick, uploadTrig
         </div>
       ) : viewMode === 'table' ? (
         <ManagementTable
+          responsive="scroll"
           columns={tableColumns}
           rows={documents}
           rowKey="document_id"

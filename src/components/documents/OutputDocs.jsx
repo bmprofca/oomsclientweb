@@ -486,6 +486,7 @@ export default function OutputDocs({ refreshTrigger }) {
         </div>
       ) : viewMode === 'table' ? (
         <ManagementTable
+          responsive="scroll"
           columns={tableColumns}
           rows={documents}
           rowKey={(row, idx) => row.id ?? idx}

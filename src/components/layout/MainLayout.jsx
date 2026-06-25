@@ -87,9 +87,8 @@ const MainLayout = ({ children }) => {
 
         {isMobile && sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-20 transition-opacity duration-300"
+            className="fixed inset-x-0 bottom-0 top-12 sm:top-16 bg-black bg-opacity-50 backdrop-blur-sm z-20 transition-opacity duration-300"
             onClick={handleOverlayClick}
-            style={{ top: '64px' }}
           />
         )}
 

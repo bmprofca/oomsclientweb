@@ -155,11 +155,11 @@ const ActionMenu = ({ actions = [], activeId, onToggle, menuId, trigger }) => {
         {trigger || (
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 dark:border-gray-700
+            className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-md border border-slate-200 dark:border-gray-700
                        bg-white text-slate-500 dark:bg-gray-900 dark:text-gray-400 transition-all hover:border-indigo-300 dark:hover:border-indigo-600
                        hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 hover:shadow-sm active:scale-95"
           >
-            <FaEllipsisV size={14} />
+            <FaEllipsisV className="h-3 w-3 sm:h-[14px] sm:w-[14px]" />
           </button>
         )}
       </div>
