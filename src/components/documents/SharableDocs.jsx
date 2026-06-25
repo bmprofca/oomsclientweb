@@ -47,7 +47,7 @@ async function triggerDownload(fileUrl, fileName) {
 }
 
 /* ─── Main Component ─────────────────────────────────────── */
-export default function SharableDocs({ refreshTrigger }) {
+export default function SharableDocs({ refreshTrigger, onUploadClick, uploadTrigger }) {
   const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'table');
   useEffect(() => {
     const onResize = () => setViewMode(window.innerWidth < 768 ? 'card' : 'table');
@@ -82,6 +82,11 @@ export default function SharableDocs({ refreshTrigger }) {
 
   /* Upload state */
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  // Open modal when parent header Upload button is clicked
+  useEffect(() => {
+    if (uploadTrigger > 0) setIsUploadModalOpen(true);
+  }, [uploadTrigger]);
   const [uploadFirm,        setUploadFirm]        = useState(null);
   const [uploadName,        setUploadName]        = useState('');
   const [uploadRemark,      setUploadRemark]      = useState('');
@@ -393,30 +398,7 @@ export default function SharableDocs({ refreshTrigger }) {
         searchValue={searchQuery}
         onSearchChange={(val) => { setSearchQuery(val); goToPage(1); }}
         searchPlaceholder="Search sharable documents..."
-        filters={[
-          {
-            value: selectedFirm,
-            onChange: (val) => { setSelectedFirm(val ?? ALL_FIRMS); goToPage(1); },
-            options: [ALL_FIRMS, ...firmOptions],
-            placeholder: 'All Firms',
-            isSearchable: true,
-            isLoading: firmIsLoading,
-            onMenuOpen: handleFirmMenuOpen,
-            onInputChange: handleFirmInputChange,
-            onMenuScrollToBottom: handleFirmMenuScrollToBottom,
-            filterOption: () => true,
-            noOptionsMessage: () => firmIsLoading ? 'Loading...' : 'No firms found',
-          },
-        ]}
-        actions={
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-semibold transition-colors shrink-0"
-          >
-            <Upload size={15} />
-            Upload
-          </button>
-        }
+        filters={[]}
       />
 
       {/* ── Bulk Download Bar ── */}
