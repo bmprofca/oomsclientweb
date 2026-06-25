@@ -117,7 +117,7 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
             </nav>
 
             {/* Help Section (Mobile) */}
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="absolute bottom-0 mb-4 border-t border-gray-200 dark:border-gray-700">
               <Link
                 to="/support"
                 onClick={() => toggleSidebar()}
