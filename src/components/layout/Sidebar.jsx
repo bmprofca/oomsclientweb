@@ -12,6 +12,7 @@ import {
   Receipt,
   FileClock,
   MessageSquare,
+  Bell,
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 
@@ -58,8 +59,8 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       path: '/ledger',
       roles: ['admin'],
     },
-     {
-      icon: FileClock,
+    {
+      icon: Bell,
       label: 'Notification',
       path: '/notification',
       roles: ['admin'],

@@ -159,7 +159,7 @@ export default function Updates() {
 
   return (
     <ManagementHub
-      title="Task Process Updates"
+      title="Task Process Notification"
       description="Real-time log of document clearances, audit validations, GST reconciliations, and tax agent actions."
       accent="indigo"
       onRefresh={() => console.log('Refreshing timeline updates...')}

@@ -9,6 +9,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Bell,
   Users,
   LifeBuoy
 } from 'lucide-react';
@@ -43,7 +44,7 @@ const Navbar = ({
             <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={toggleSidebar}
-                className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-200 focus:outline-none flex-shrink-0
+                className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-200 focus:outline-none flex-shrink-0
                   ${isSidebarOpen ? 'text-gray-600 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                 aria-label="Toggle menu"
               >
@@ -55,7 +56,7 @@ const Navbar = ({
                 onClick={() => navigate('/dashboard')}
                 className="flex items-center gap-1.5 sm:gap-2 rounded-md transition-opacity duration-200 hover:opacity-90 focus:outline-none"
               >
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-md flex items-center justify-center shadow-md">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-md flex items-center justify-center shadow-md">
                   <span className="text-white font-bold text-xs sm:text-sm">O</span>
                 </div>
                 <div>
@@ -68,6 +69,20 @@ const Navbar = ({
 
             {/* Right section */}
             <div className="flex items-center space-x-1 sm:space-x-2">
+              {/* Notification Button */}
+              <button
+                onClick={() => navigate('/notification')}
+                className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-300 focus:outline-none
+                  bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
+                  border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500
+                  hover:shadow-md active:scale-95"
+                aria-label="View notifications"
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-slate-600 dark:text-slate-200 transition-colors duration-200" />
+                <span className="sr-only">Notifications</span>
+              </button>
+
               {/* Desktop Switch Profile Button */}
               <button
                 onClick={openProfileModal}
@@ -84,7 +99,7 @@ const Navbar = ({
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-300 group focus:outline-none
+                className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-300 group focus:outline-none
                   bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
                   border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500
                   hover:shadow-md active:scale-95"
@@ -93,9 +108,9 @@ const Navbar = ({
                 id="theme-toggle-btn"
               >
                 {theme === 'dark' ? (
-                  <Sun className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-amber-400 group-hover:text-amber-300 transition-colors duration-200" />
+                  <Sun className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-amber-400 group-hover:text-amber-300 transition-colors duration-200" />
                 ) : (
-                  <Moon className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-slate-600 group-hover:text-indigo-600 transition-colors duration-200" />
+                  <Moon className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-slate-600 group-hover:text-indigo-600 transition-colors duration-200" />
                 )}
               </button>
 
@@ -103,11 +118,11 @@ const Navbar = ({
               <div className="relative">
                 <button
                   onClick={() => setOpenDropdown(!openDropdown)}
-                  className="flex items-center space-x-1.5 sm:space-x-3 p-1 sm:p-1.5 sm:pr-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+                  className="flex items-center space-x-1.5 sm:space-x-3 p-1.5 sm:p-1.5 sm:pr-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
                 >
                   {/* Avatar */}
                   <div className="relative">
-                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-md overflow-hidden flex items-center justify-center shadow-md bg-gradient-to-br from-blue-500 to-indigo-600">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md overflow-hidden flex items-center justify-center shadow-md bg-gradient-to-br from-blue-500 to-indigo-600">
                       <span className="text-white font-bold text-xs sm:text-sm">
                         {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                       </span>
