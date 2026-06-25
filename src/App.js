@@ -21,6 +21,7 @@ import ServiceDetails from "./pages/ServiceDetails";
 import ServiceRequests from "./pages/ServiceRequests";
 import ServiceRequestDetails from "./pages/ServiceRequestDetails";
 import Support from "./pages/Support";
+import Notification from "./pages/Notification";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
                   <Route path="/documents" element={<Documents />} />
                   <Route path="/ledger" element={<Ledger />} />
                   <Route path="/Support" element={<Support />} />
+                  <Route path="/notification" element={<Notification />} />
                 </Route>
               </Route>
 
