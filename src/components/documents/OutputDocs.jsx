@@ -4,6 +4,7 @@ import {
   IndianRupee, Users, ClipboardList,
   Download, FileText, Eye, X, ExternalLink,
   Calendar, Building2, Tag, StickyNote,
+  FileSpreadsheet, File as FileIcon, User
 } from 'lucide-react';
 import SelectField from '../common/SelectField';
 import Pagination, { usePagination } from '../common/PaginationComponent';
@@ -44,6 +45,8 @@ function getFileType(url = '') {
   const ext = url.split('?')[0].split('.').pop().toLowerCase();
   if (['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) return 'image';
   if (ext === 'pdf') return 'pdf';
+  if (['xls','xlsx','csv'].includes(ext)) return 'excel';
+  if (['doc','docx'].includes(ext)) return 'word';
   return 'other';
 }
 
@@ -53,85 +56,8 @@ function accentForCategory(id) {
   return               { tag: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300', border: 'border-violet-400', dot: 'bg-violet-500' };
 }
 
-/* ─── Document Viewer Modal ──────────────────────────────── */
-function DocViewerModal({ isOpen, onClose, doc }) {
-  if (!doc) return null;
-  const fileUrl  = doc.file || '';
-  const fileType = getFileType(fileUrl);
-  const title    = doc.firm?.name || 'Document';
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      icon={FileText}
-      size="4xl"
-      contentClassName="p-0 flex flex-col h-[70vh] bg-gray-100 dark:bg-gray-950"
-      footer={
-        <>
-          {fileUrl && (
-            <a
-              href={fileUrl}
-              download
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
-            >
-              <Download size={16} /> Download
-            </a>
-          )}
-          {fileUrl && (
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold transition-colors"
-            >
-              <ExternalLink size={16} /> Open Tab
-            </a>
-          )}
-        </>
-      }
-    >
-      <div className="flex-1 overflow-auto w-full h-full flex items-center justify-center p-4">
-        {!fileUrl ? (
-          <div className="flex flex-col items-center gap-3 text-slate-400">
-            <FileText size={48} className="opacity-30" />
-            <p className="text-sm">No file available</p>
-          </div>
-        ) : fileType === 'image' ? (
-          <img
-            src={fileUrl}
-            alt={title}
-            className="max-w-full max-h-full object-contain rounded shadow-md"
-          />
-        ) : fileType === 'pdf' ? (
-          <iframe
-            src={fileUrl}
-            title={title}
-            className="w-full h-full border-0"
-          />
-        ) : (
-          /* Fallback: try object tag, then link */
-          <div className="flex flex-col items-center gap-4 text-slate-500 dark:text-slate-400">
-            <FileText size={56} className="opacity-20" />
-            <p className="text-sm font-medium">Preview not available for this file type.</p>
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
-            >
-              <ExternalLink size={14} /> Open in new tab
-            </a>
-          </div>
-        )}
-      </div>
-    </Modal>
-  );
-}
-
 /* ─── Document Card ──────────────────────────────────────── */
-function DocCard({ doc, activeCategory, onView, onDownload }) {
+function DocCard({ doc, activeCategory, onDownload }) {
   const accent = accentForCategory(activeCategory);
 
   return (
@@ -143,50 +69,60 @@ function DocCard({ doc, activeCategory, onView, onDownload }) {
       transition={{ duration: 0.22 }}
       className={`group relative flex flex-col bg-white dark:bg-gray-800 rounded-xl border-l-4 ${accent.border} border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden h-64`}
     >
-      {/* Card top stripe */}
-      {/* File Preview Only */}
-      {doc.mime_type?.startsWith('image/') || getFileType(doc.file) === 'image' ? (
-        <div 
-          className="w-full flex-1 bg-slate-100 dark:bg-slate-900/50 flex items-center justify-center overflow-hidden cursor-pointer group-hover:bg-slate-200 dark:group-hover:bg-slate-900/70 transition-colors"
-          onClick={() => onView(doc)}
-        >
-          <img src={doc.file} alt={doc.firm?.name || 'Document'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          {doc.type && (
-            <span className={`absolute top-2 right-2 text-[9px] sm:text-[10px] font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-full ${accent.tag} opacity-90 group-hover:opacity-100 transition-opacity z-10 shadow-sm`}>
-              {doc.type}
-            </span>
-          )}
-        </div>
-      ) : (
-        <div 
-          className="w-full flex-1 bg-slate-100 dark:bg-slate-900/50 flex flex-col items-center justify-center overflow-hidden cursor-pointer group-hover:bg-slate-200 dark:group-hover:bg-slate-900/70 transition-colors"
-          onClick={() => onView(doc)}
-        >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-slate-400 group-hover:scale-110 transition-transform duration-300">
-            <FileText size={32} />
-          </div>
-          {doc.type && (
-            <span className={`absolute top-2 right-2 text-[9px] sm:text-[10px] font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-full ${accent.tag} opacity-90 group-hover:opacity-100 transition-opacity z-10 shadow-sm`}>
-              {doc.type}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Header */}
+      <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-start gap-2 bg-white dark:bg-gray-800">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm line-clamp-2 leading-tight" title={doc.firm?.name}>
+          {doc.firm?.name || 'Unknown Firm'}
+        </h3>
+        {doc.type && (
+          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${accent.tag}`}>
+            {doc.type}
+          </span>
+        )}
+      </div>
 
-      {/* Action bar */}
-      <div className="flex border-t border-gray-100 dark:border-gray-700">
+      {/* Body / File Preview */}
+      <div 
+        className="w-full flex-1 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center overflow-hidden cursor-pointer group-hover:bg-slate-100 dark:group-hover:bg-slate-900/70 transition-colors relative"
+        onClick={() => onDownload(doc.file, doc.firm?.name)}
+      >
+        {(doc.mime_type?.startsWith('image/') || getFileType(doc.file) === 'image') ? (
+          <img src={doc.file} alt={doc.firm?.name || 'Document'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        ) : doc.mime_type?.includes('pdf') || getFileType(doc.file) === 'pdf' ? (
+          <div className="flex flex-col items-center justify-center text-red-500 dark:text-red-400 group-hover:scale-110 transition-transform duration-300">
+            <FileText size={40} />
+          </div>
+        ) : doc.mime_type?.includes('spreadsheet') || doc.mime_type?.includes('excel') || ['excel'].includes(getFileType(doc.file)) ? (
+          <div className="flex flex-col items-center justify-center text-green-600 dark:text-green-500 group-hover:scale-110 transition-transform duration-300">
+            <FileSpreadsheet size={40} />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-blue-600 dark:text-blue-500 group-hover:scale-110 transition-transform duration-300">
+            <FileIcon size={40} />
+          </div>
+        )}
+
+        {/* Overlay download icon on hover */}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="bg-white text-gray-900 rounded-full p-3 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">
+            <Download size={20} />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <User size={14} />
+          <span className="truncate max-w-[110px]" title={doc.create_by?.name}>
+            {doc.create_by?.name || 'Unknown'}
+          </span>
+        </div>
         <button
-          onClick={() => onView(doc)}
-          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
+          onClick={(e) => { e.stopPropagation(); onDownload(doc.file, doc.firm?.name); }}
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 rounded-md text-xs font-semibold transition-colors shadow-sm"
         >
-          <Eye size={12} /> <span>View</span>
-        </button>
-        <div className="w-px bg-gray-100 dark:bg-gray-700" />
-        <button
-          onClick={() => onDownload(doc.file)}
-          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
-        >
-          <Download size={12} /> <span>Download</span>
+          <Download size={14} /> Download
         </button>
       </div>
     </motion.div>
@@ -209,9 +145,6 @@ export default function OutputDocs({ refreshTrigger }) {
 
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  /* Viewer modal state */
-  const [viewDoc, setViewDoc] = useState(null);
 
   /* Filters — default to the "All …" sentinel so the dropdown shows a label immediately */
   const [selectedFirm,  setSelectedFirm]  = useState(ALL_FIRMS);
@@ -375,16 +308,35 @@ export default function OutputDocs({ refreshTrigger }) {
     setSelectedType(ALL_TYPES); // reset type sentinel on category change
   };
 
-  const handleDownload = (fileUrl) => {
+  const handleDownload = async (fileUrl, firmName) => {
     if (!fileUrl) { toast.error('File URL not available'); return; }
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = fileUrl.split('/').pop().split('?')[0] || 'document';
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const toastId = toast.loading('Downloading...');
+    try {
+      const resp = await fetch(fileUrl);
+      if (!resp.ok) throw new Error('Network response was not ok');
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const ext = fileUrl.split('?')[0].split('.').pop() || 'document';
+      a.download = firmName ? `${firmName}.${ext}` : fileUrl.split('/').pop().split('?')[0] || 'document';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success('Downloaded successfully', { id: toastId });
+    } catch (err) {
+      console.error('Direct download failed, falling back:', err);
+      toast.dismiss(toastId);
+      // Fallback
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      const ext = fileUrl.split('?')[0].split('.').pop() || 'document';
+      a.download = firmName ? `${firmName}.${ext}` : fileUrl.split('/').pop().split('?')[0] || 'document';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const getTypeOptions = () => {
@@ -480,7 +432,6 @@ export default function OutputDocs({ refreshTrigger }) {
                 key={doc.id ?? idx}
                 doc={doc}
                 activeCategory={activeCategory}
-                onView={setViewDoc}
                 onDownload={handleDownload}
               />
             ))}
@@ -501,12 +452,6 @@ export default function OutputDocs({ refreshTrigger }) {
         </div>
       )}
 
-      {/* ── Document Viewer Modal ── */}
-      <DocViewerModal
-        isOpen={!!viewDoc}
-        onClose={() => setViewDoc(null)}
-        doc={viewDoc}
-      />
     </div>
   );
 }

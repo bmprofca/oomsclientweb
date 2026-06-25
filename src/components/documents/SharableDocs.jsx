@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Share2, Upload, Trash2, ExternalLink, FileText, Download, Building2, CalendarDays, CheckCircle
+  Upload, Trash2, FileText, Download, Building2, User, CheckCircle
 } from 'lucide-react';
+// file-type icons from react-icons
+import { FaFilePdf, FaFileExcel, FaFileWord, FaFileCsv, FaFileAlt } from 'react-icons/fa';
 import SelectField from '../common/SelectField';
 import Pagination, { usePagination } from '../common/PaginationComponent';
 import { PageContentSkeleton } from '../SkeletonComponent';
@@ -12,89 +14,51 @@ import toast from 'react-hot-toast';
 const ALL_FIRMS = { label: 'All Firms', value: '' };
 
 /* ─── Helpers ────────────────────────────────────────────── */
-function getFileType(url = '') {
+function getFileType(url = '', mimeType = '') {
+  if (mimeType.startsWith('image/')) return 'image';
   const ext = url.split('?')[0].split('.').pop().toLowerCase();
   if (['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) return 'image';
-  if (ext === 'pdf') return 'pdf';
+  if (ext === 'pdf' || mimeType === 'application/pdf') return 'pdf';
+  if (['xls','xlsx'].includes(ext) || mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'excel';
+  if (['doc','docx'].includes(ext) || mimeType.includes('wordprocessingml') || mimeType.includes('msword')) return 'word';
+  if (ext === 'csv' || mimeType === 'text/csv') return 'csv';
   return 'other';
 }
 
-/* ─── Document Viewer Modal ──────────────────────────────── */
-function DocViewerModal({ isOpen, onClose, doc }) {
-  if (!doc) return null;
-  const fileUrl  = doc.file || doc.url || '';
-  const fileType = doc.mime_type?.startsWith('image/') ? 'image' : getFileType(fileUrl);
-  const title    = doc.name || 'Document';
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      icon={FileText}
-      size="4xl"
-      contentClassName="p-0 flex flex-col h-[70vh] bg-gray-100 dark:bg-gray-950"
-      footer={
-        <>
-          {fileUrl && (
-            <a
-              href={fileUrl}
-              download
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
-            >
-              <Download size={16} /> Download
-            </a>
-          )}
-          {fileUrl && (
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold transition-colors"
-            >
-              <ExternalLink size={16} /> Open Tab
-            </a>
-          )}
-        </>
-      }
-    >
-      <div className="flex-1 overflow-auto w-full h-full flex items-center justify-center p-4">
-        {!fileUrl ? (
-          <div className="flex flex-col items-center gap-3 text-slate-400">
-            <FileText size={48} className="opacity-30" />
-            <p className="text-sm">No file available</p>
-          </div>
-        ) : fileType === 'image' ? (
-          <img
-            src={fileUrl}
-            alt={title}
-            className="max-w-full max-h-full object-contain rounded shadow-md"
-          />
-        ) : fileType === 'pdf' ? (
-          <iframe
-            src={fileUrl}
-            title={title}
-            className="w-full h-full border-0"
-          />
-        ) : (
-          /* Fallback: try object tag, then link */
-          <div className="flex flex-col items-center gap-4 text-slate-500 dark:text-slate-400">
-            <FileText size={56} className="opacity-20" />
-            <p className="text-sm font-medium">Preview not available for this file type.</p>
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
-            >
-              <ExternalLink size={14} /> Open in new tab
-            </a>
-          </div>
-        )}
-      </div>
-    </Modal>
-  );
+function FileTypeIcon({ type, className = '' }) {
+  const base = `w-10 h-10 ${className}`;
+  if (type === 'pdf')   return <FaFilePdf   className={`${base} text-red-500`} />;
+  if (type === 'excel') return <FaFileExcel  className={`${base} text-emerald-600`} />;
+  if (type === 'word')  return <FaFileWord   className={`${base} text-blue-600`} />;
+  if (type === 'csv')   return <FaFileCsv    className={`${base} text-green-500`} />;
+  return                       <FaFileAlt    className={`${base} text-slate-400`} />;
 }
+
+/* ─── Direct-download (blob, no new tab) ─────────────────── */
+async function triggerDownload(fileUrl, fileName) {
+  if (!fileUrl) return;
+  try {
+    const resp = await fetch(fileUrl);
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = fileName || fileUrl.split('/').pop().split('?')[0] || 'document';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch {
+    // fallback: anchor download
+    const a    = document.createElement('a');
+    a.href     = fileUrl;
+    a.download = fileName || 'document';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+}
+
 
 export default function SharableDocs({ refreshTrigger }) {
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
@@ -128,9 +92,9 @@ export default function SharableDocs({ refreshTrigger }) {
   const [isUploading, setIsUploading] = useState(false);
   
   // Viewer & Delete State
-  const [docToView, setDocToView] = useState(null);
   const [docToDelete, setDocToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting]   = useState(false);
+  const [downloading, setDownloading] = useState(null); // document_id being downloaded
   
   // Drag & Drop State
   const [isDragging, setIsDragging] = useState(false);
@@ -333,16 +297,13 @@ export default function SharableDocs({ refreshTrigger }) {
   };
 
   // UI Helpers
-  const handleDownload = (fileUrl) => {
+  const handleDownload = async (doc) => {
+    const fileUrl  = doc.file || doc.url;
+    const fileName = doc.name || 'document';
     if (!fileUrl) { toast.error('File URL not available'); return; }
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = fileUrl.split('/').pop().split('?')[0] || 'document';
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    setDownloading(doc.document_id);
+    await triggerDownload(fileUrl, fileName);
+    setDownloading(null);
   };
 
   return (
@@ -382,72 +343,88 @@ export default function SharableDocs({ refreshTrigger }) {
           <p className="text-slate-500 dark:text-slate-400 font-medium">No sharable documents found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
-          {documents.map((doc) => (
-            <div key={doc.id || doc.document_id} className="flex flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow h-64">
-              
-              {doc.mime_type?.startsWith('image/') || getFileType(doc.file || doc.url) === 'image' ? (
-                /* Image Only View */
-                <div 
-                  className="w-full flex-1 bg-slate-100 dark:bg-slate-900/50 flex items-center justify-center overflow-hidden cursor-pointer group"
-                  onClick={() => setDocToView(doc)}
-                >
-                  <img src={doc.file || doc.url} alt={doc.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {documents.map((doc) => {
+            const fileUrl  = doc.file || doc.url || '';
+            const fileType = getFileType(fileUrl, doc.mime_type || '');
+            const isImg    = fileType === 'image';
+            const isDownloading = downloading === doc.document_id;
+
+            return (
+              <div
+                key={doc.document_id}
+                className="flex flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              >
+                {/* ── Card Header ── */}
+                <div className="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 flex items-center gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-semibold shrink-0 max-w-[45%] truncate" title={doc.firm?.name}>
+                    <Building2 size={9} className="shrink-0" />
+                    <span className="truncate">{doc.firm?.name || 'Unknown'}</span>
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-600 text-xs shrink-0">/</span>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate" title={doc.name}>
+                    {doc.name || 'Unnamed'}
+                  </span>
                 </div>
-              ) : (
-                /* Details View for non-images */
-                <div className="p-4 flex-1 flex flex-col gap-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
-                      <FileText size={20} />
+
+                {/* ── File Preview ── */}
+                <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-900/50 overflow-hidden" style={{ minHeight: '140px', maxHeight: '180px' }}>
+                  {isImg ? (
+                    <img
+                      src={fileUrl}
+                      alt={doc.name}
+                      className="w-full h-full object-cover"
+                      style={{ minHeight: '140px', maxHeight: '180px' }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 py-6">
+                      <FileTypeIcon type={fileType} className="w-12 h-12" />
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                        {fileType === 'pdf' ? 'PDF Document' :
+                         fileType === 'excel' ? 'Excel Spreadsheet' :
+                         fileType === 'word'  ? 'Word Document' :
+                         fileType === 'csv'   ? 'CSV File' : 'File'}
+                      </span>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm line-clamp-2" title={doc.name}>
-                      {doc.name || 'Unnamed Document'}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
-                      <Building2 size={12} /> {doc.firm?.name || doc.firm_name || 'Unknown Firm'}
-                    </p>
-                  </div>
-                  
-                  {doc.remark && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 italic line-clamp-2 border-l-2 border-slate-200 dark:border-slate-700 pl-2">
-                      {doc.remark}
-                    </p>
                   )}
-                  
-                  <div className="text-xs text-slate-400 dark:text-slate-500 mt-auto pt-2 flex items-center gap-1">
-                    <CalendarDays size={12} /> {doc.create_date ? doc.create_date.split(' ')[0] : '—'}
+                </div>
+
+                {/* ── Card Footer ── */}
+                <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2">
+                  {/* Created by */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                      <User size={10} className="text-indigo-500" />
+                    </div>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate" title={doc.create_by?.name}>
+                      {doc.create_by?.name || 'Unknown'}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleDownload(doc)}
+                      disabled={isDownloading}
+                      title="Download"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
+                    >
+                      {isDownloading
+                        ? <span className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                        : <Download size={13} />}
+                    </button>
+                    <button
+                      onClick={() => setDocToDelete(doc)}
+                      title="Delete"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
-              )}
-              
-              <div className="flex border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-                <button
-                  onClick={() => setDocToView(doc)}
-                  className="flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                >
-                  <ExternalLink size={14} /> Open
-                </button>
-                <div className="w-px bg-slate-200 dark:bg-slate-700" />
-                <button
-                  onClick={() => handleDownload(doc.file || doc.url)}
-                  className="flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
-                >
-                  <Download size={14} /> Download
-                </button>
-                <div className="w-px bg-slate-200 dark:bg-slate-700" />
-                <button
-                  onClick={() => setDocToDelete(doc)}
-                  className="flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                >
-                  <Trash2 size={14} /> Delete
-                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -582,12 +559,6 @@ export default function SharableDocs({ refreshTrigger }) {
         </div>
       </Modal>
 
-      {/* Viewer Modal */}
-      <DocViewerModal
-        isOpen={!!docToView}
-        onClose={() => setDocToView(null)}
-        doc={docToView}
-      />
 
       {/* Delete Confirmation Modal */}
       <Modal
