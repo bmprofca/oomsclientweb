@@ -361,7 +361,7 @@ export default function ServiceRequests() {
         onClose={() => !isCreating && setIsCreateModalOpen(false)}
         title="Create Service Request"
         icon={Plus}
-        size="lg"
+        size="3xl"
         footer={
           <>
             

@@ -503,7 +503,7 @@ export default function SharableDocs({ refreshTrigger, onUploadClick, uploadTrig
         onClose={() => !isUploading && setIsUploadModalOpen(false)}
         title="Upload Sharable Document"
         icon={Upload}
-        size="2xl"
+        size="3xl"
         footer={
           <button
             onClick={handleUploadSubmit}
