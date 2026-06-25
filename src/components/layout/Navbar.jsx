@@ -36,7 +36,7 @@ const Navbar = ({
 
   return (
     <>
-      <nav className="sticky top-0 z-40 h-12 sm:h-16 bg-white dark:bg-gray-900 shadow-md dark:shadow-gray-950/50 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+      <nav className="sticky top-0 z-40 h-16 bg-white dark:bg-gray-900 shadow-md dark:shadow-gray-950/50 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
         <div className="px-2 sm:px-4 h-full">
           <div className="flex items-center justify-between h-full">
 
@@ -69,18 +69,39 @@ const Navbar = ({
 
             {/* Right section */}
             <div className="flex items-center space-x-1 sm:space-x-2">
+              
               {/* Notification Button */}
               <button
                 onClick={() => navigate('/notification')}
                 className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-300 focus:outline-none
-                  bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
-                  border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500
-                  hover:shadow-md active:scale-95"
+                  bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/40
+                  text-indigo-600 dark:text-indigo-400 font-medium text-sm
+                  border border-indigo-100 dark:border-indigo-800/50 active:scale-95"
                 aria-label="View notifications"
                 title="Notifications"
               >
                 <Bell className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-slate-600 dark:text-slate-200 transition-colors duration-200" />
                 <span className="sr-only">Notifications</span>
+              </button>
+
+
+
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-300 group focus:outline-none
+                  bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/40
+                  text-indigo-600 dark:text-indigo-400 font-medium text-sm
+                  border border-indigo-100 dark:border-indigo-800/50 active:scale-95"
+                aria-label="Toggle theme"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                id="theme-toggle-btn"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-amber-400 group-hover:text-amber-300 transition-colors duration-200" />
+                ) : (
+                  <Moon className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-slate-600 group-hover:text-indigo-600 transition-colors duration-200" />
+                )}
               </button>
 
               {/* Desktop Switch Profile Button */}
@@ -94,24 +115,6 @@ const Navbar = ({
               >
                 <Users className="w-4 h-4" />
                 Switch Profile
-              </button>
-
-              {/* Theme Toggle Button */}
-              <button
-                onClick={toggleTheme}
-                className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md transition-all duration-300 group focus:outline-none
-                  bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
-                  border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500
-                  hover:shadow-md active:scale-95"
-                aria-label="Toggle theme"
-                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                id="theme-toggle-btn"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-amber-400 group-hover:text-amber-300 transition-colors duration-200" />
-                ) : (
-                  <Moon className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-slate-600 group-hover:text-indigo-600 transition-colors duration-200" />
-                )}
               </button>
 
               {/* User Menu */}
