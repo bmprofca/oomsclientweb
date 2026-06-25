@@ -214,7 +214,7 @@ export default function ServiceDetails() {
   const { service, branch, charges } = serviceDetails;
 
   return (
-    <div className="mx-auto space-y-6">
+    <div className="mx-auto space-y-2">
 
       {/* ── Header ── */}
       <motion.div

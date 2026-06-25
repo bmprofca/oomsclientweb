@@ -86,7 +86,7 @@ export default function FirmDetails() {
   const [firm, setFirm] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const fetchedFirmIdRef = useRef(null);
 
   const fetchDetails = async () => {
@@ -150,7 +150,7 @@ export default function FirmDetails() {
   const { tax, address, audit } = firm;
 
   return (
-    <div className="mx-auto space-y-6">
+    <div className="mx-auto space-y-2">
 
       {/* ── Header ── */}
       <motion.div
@@ -176,15 +176,15 @@ export default function FirmDetails() {
             </div>
           </div>
         </div>
-        
+
         {/* Refresh Button */}
         <button
           onClick={handleRefresh}
-          className="absolute top-[10px] right-[10px] flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          className="absolute top-[10px] right-[10px] flex items-center justify-center h-[34px] gap-2 px-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
           title="Refresh"
         >
           <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </motion.div>
 

@@ -48,9 +48,9 @@ const StatusBadge = ({ status }) => {
 const dotColor = (status = '') => {
   const s = status.toLowerCase();
   if (s.includes('complete')) return 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-900/40';
-  if (s.includes('pending'))  return 'bg-amber-500  ring-amber-100  dark:ring-amber-900/40';
+  if (s.includes('pending')) return 'bg-amber-500  ring-amber-100  dark:ring-amber-900/40';
   if (s.includes('progress')) return 'bg-blue-500   ring-blue-100   dark:ring-blue-900/40';
-  if (s.includes('cancel'))   return 'bg-red-500    ring-red-100    dark:ring-red-900/40';
+  if (s.includes('cancel')) return 'bg-red-500    ring-red-100    dark:ring-red-900/40';
   return 'bg-slate-400 ring-slate-100 dark:ring-slate-700';
 };
 
@@ -70,10 +70,10 @@ const InfoRow = ({ label, value, icon: Icon }) => (
 
 const Section = ({ title, icon: Icon, accent = 'amber', children }) => {
   const accents = {
-    amber:   'border-amber-400 text-amber-600 dark:text-amber-400',
-    indigo:  'border-indigo-400 text-indigo-600 dark:text-indigo-400',
+    amber: 'border-amber-400 text-amber-600 dark:text-amber-400',
+    indigo: 'border-indigo-400 text-indigo-600 dark:text-indigo-400',
     emerald: 'border-emerald-400 text-emerald-600 dark:text-emerald-400',
-    slate:   'border-slate-400 text-slate-500 dark:text-slate-400',
+    slate: 'border-slate-400 text-slate-500 dark:text-slate-400',
   };
   return (
     <div className="bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
@@ -227,7 +227,7 @@ export default function TaskDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showStatusLog, setShowStatusLog] = useState(false);
-  
+
   const fetchedTaskIdRef = useRef(null);
 
   const fetchDetails = async () => {
@@ -291,7 +291,7 @@ export default function TaskDetails() {
   const { firm, service, charges, dates, billing, staffs, status, billing_status, is_recurring, status_log = [] } = task;
 
   return (
-    <div className="mx-auto space-y-6">
+    <div className="mx-auto space-y-2">
 
       {/* ── Header ── */}
       <motion.div
@@ -323,22 +323,22 @@ export default function TaskDetails() {
           {/* Status Log button */}
           <button
             onClick={() => setShowStatusLog(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all shadow-sm"
             title="Status Log"
           >
             <History size={15} />
-            <span className="hidden sm:inline">Status Log</span>
             {status_log.length > 0 && (
-              <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+              <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
                 {status_log.length}
               </span>
             )}
+            <span className="hidden sm:inline">Status Log</span>
           </button>
 
           {/* Refresh Button */}
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
             title="Refresh"
           >
             <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />

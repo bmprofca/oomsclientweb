@@ -17,7 +17,7 @@ const formatType = (typeStr) => {
 };
 
 const getStatusColor = (status) => {
-  switch(status?.toLowerCase()) {
+  switch (status?.toLowerCase()) {
     case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
     case 'approved': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
     case 'rejected': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
@@ -151,7 +151,7 @@ export default function ServiceRequestDetails() {
   const { service, firm, charges, status, client_remark, office_remark, task_id, create_date } = requestDetails;
 
   return (
-    <div className="mx-auto space-y-6">
+    <div className="mx-auto space-y-2">
 
       {/* ── Header ── */}
       <motion.div
@@ -185,7 +185,7 @@ export default function ServiceRequestDetails() {
           title="Refresh"
         >
           <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </motion.div>
 
