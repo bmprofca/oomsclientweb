@@ -364,13 +364,7 @@ export default function ServiceRequests() {
         size="lg"
         footer={
           <>
-            <button
-              onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
-              disabled={isCreating}
-            >
-              Cancel
-            </button>
+            
             <button
               onClick={handleCreateRequest}
               disabled={isCreating || !selectedFormFirm || !selectedFormService}
