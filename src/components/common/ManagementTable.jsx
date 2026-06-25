@@ -125,7 +125,7 @@ export default function ManagementTable({
     >
       <div className={joinClasses('w-full', responsive === 'scroll' ? 'overflow-x-auto' : 'overflow-hidden', tableClassName)}>
         <table className={joinClasses(
-          'w-full text-xs sm:text-sm text-gray-700 dark:text-gray-300',
+          'w-full text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap',
           responsive === 'scroll' ? 'min-w-[640px] table-auto' : 'table-fixed text-left',
           tableClassName
         )}>
