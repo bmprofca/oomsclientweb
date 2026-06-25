@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   IndianRupee, Users, ClipboardList,
-  Download, FileText,
+  Download, FileText, CheckSquare, Square, X as XIcon,
 } from 'lucide-react';
 import SelectField from '../common/SelectField';
 import Pagination, { usePagination } from '../common/PaginationComponent';
@@ -72,6 +72,10 @@ export default function OutputDocs({ refreshTrigger }) {
 
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  /* Bulk selection */
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   const [documents, setDocuments]   = useState([]);
   const [isLoading, setIsLoading]   = useState(true);
@@ -209,6 +213,9 @@ export default function OutputDocs({ refreshTrigger }) {
     return () => { clearTimeout(timer); docsAbortRef.current?.abort(); };
   }, [fetchDocuments, refreshTrigger]);
 
+  /* Clear selection when documents change */
+  useEffect(() => { setSelectedIds(new Set()); }, [documents]);
+
   /* ── Download ── */
   const handleDownload = async (fileUrl, firmName) => {
     if (!fileUrl) { toast.error('File URL not available'); return; }
@@ -237,6 +244,58 @@ export default function OutputDocs({ refreshTrigger }) {
     setActiveCategory(categoryId);
     goToPage(1);
     setSelectedType(ALL_TYPES);
+    setSelectedIds(new Set());
+  };
+
+  /* ── Bulk selection helpers ── */
+  const getDocId = (doc, idx) => doc.id ?? idx;
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = documents.length > 0 && documents.every((d, i) => selectedIds.has(getDocId(d, i)));
+  const someSelected = !allSelected && documents.some((d, i) => selectedIds.has(getDocId(d, i)));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(documents.map((d, i) => getDocId(d, i))));
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    const selected = documents.filter((d, i) => selectedIds.has(getDocId(d, i))).filter(d => d.file);
+    if (!selected.length) { toast.error('No downloadable files selected'); return; }
+    setIsBulkDownloading(true);
+    const toastId = toast.loading(`Downloading 0 / ${selected.length}…`);
+    let done = 0;
+    for (const doc of selected) {
+      try {
+        const resp = await fetch(doc.file);
+        if (!resp.ok) throw new Error();
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = doc.file.split('?')[0].split('.').pop() || 'document';
+        a.download = doc.firm?.name ? `${doc.firm.name}.${ext}` : doc.file.split('/').pop().split('?')[0] || 'document';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch {
+        // silently skip failures
+      }
+      done++;
+      toast.loading(`Downloading ${done} / ${selected.length}…`, { id: toastId });
+    }
+    toast.success(`Downloaded ${done} file${done !== 1 ? 's' : ''}`, { id: toastId });
+    setIsBulkDownloading(false);
+    setSelectedIds(new Set());
   };
 
   const getTypeOptions = () => {
@@ -246,8 +305,34 @@ export default function OutputDocs({ refreshTrigger }) {
 
   const accent = accentForCategory(activeCategory);
 
-  /* ── Table columns ── */
+  /* ── Table columns (checkbox + data) ── */
+  const checkboxColumn = {
+    key: '__select__',
+    label: (
+      <button onClick={toggleSelectAll} className="flex items-center justify-center">
+        {allSelected
+          ? <CheckSquare size={16} className="text-emerald-500" />
+          : someSelected
+            ? <CheckSquare size={16} className="text-emerald-300" />
+            : <Square size={16} className="text-slate-400" />}
+      </button>
+    ),
+    headerClassName: 'w-10 text-center',
+    className: 'w-10 text-center',
+    render: (row, idx) => {
+      const id = getDocId(row, idx);
+      return (
+        <button onClick={(e) => { e.stopPropagation(); toggleSelect(id); }} className="flex items-center justify-center">
+          {selectedIds.has(id)
+            ? <CheckSquare size={16} className="text-emerald-500" />
+            : <Square size={16} className="text-slate-300 hover:text-slate-500" />}
+        </button>
+      );
+    },
+  };
+
   const tableColumns = [
+    checkboxColumn,
     {
       key: 'firm',
       label: 'Firm',
@@ -363,6 +448,33 @@ export default function OutputDocs({ refreshTrigger }) {
         searchPlaceholder="Search documents..."
       />
 
+      {/* ── Bulk Download Bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+            {selectedIds.size} document{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkDownload}
+              disabled={isBulkDownloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold rounded-md transition-colors"
+            >
+              {isBulkDownloading
+                ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Download size={13} />}
+              {isBulkDownloading ? 'Downloading…' : 'Download Selected'}
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="flex items-center gap-1 px-2 py-1.5 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-md text-xs transition-colors"
+            >
+              <XIcon size={13} /> Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Content ── */}
       {isLoading ? (
         <PageContentSkeleton viewMode={viewMode} columns={4} rows={8} />
@@ -384,36 +496,49 @@ export default function OutputDocs({ refreshTrigger }) {
         />
       ) : (
         <ManagementGrid viewMode={viewMode}>
-          {documents.map((doc, idx) => (
-            <ManagementCard
-              key={doc.id ?? idx}
-              title={doc.firm?.name || 'Unknown Firm'}
-              subtitle={doc.f_year ? `FY: ${doc.f_year}` : ''}
-              accent={accent}
-              icon={<FileText size={16} />}
-              badge={
-                doc.type && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    {doc.type}
-                  </span>
-                )
-              }
-              actions={getRowActions(doc)}
-              menuId={`menu-${doc.id ?? idx}`}
-              activeId={activeMenuId}
-              onToggle={(e, id) => setActiveMenuId(id)}
-            >
-              {/* Compact meta rows */}
-              <div className="mt-2 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-medium">Month</span>
-                <span className="capitalize font-semibold text-slate-600 dark:text-slate-300">{doc.month || '-'}</span>
+          {documents.map((doc, idx) => {
+            const id = getDocId(doc, idx);
+            const isSelected = selectedIds.has(id);
+            return (
+              <div key={id} className="relative">
+                {/* Selection checkbox overlay */}
+                <button
+                  onClick={() => toggleSelect(id)}
+                  className={`absolute top-2 left-2 z-10 rounded-md p-0.5 transition-colors ${
+                    isSelected ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-500'
+                  }`}
+                >
+                  {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
+                </button>
+                <ManagementCard
+                  title={doc.firm?.name || 'Unknown Firm'}
+                  subtitle={doc.f_year ? `FY: ${doc.f_year}` : ''}
+                  accent={isSelected ? 'emerald' : accent}
+                  icon={<FileText size={16} />}
+                  badge={
+                    doc.type && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                        {doc.type}
+                      </span>
+                    )
+                  }
+                  actions={getRowActions(doc)}
+                  menuId={`menu-${id}`}
+                  activeId={activeMenuId}
+                  onToggle={(e, mid) => setActiveMenuId(mid)}
+                >
+                  <div className="mt-2 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">Month</span>
+                    <span className="capitalize font-semibold text-slate-600 dark:text-slate-300">{doc.month || '-'}</span>
+                  </div>
+                  <div className="mt-1 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">Created By</span>
+                    <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{doc.create_by?.name || '-'}</span>
+                  </div>
+                </ManagementCard>
               </div>
-              <div className="mt-1 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-medium">Created By</span>
-                <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{doc.create_by?.name || '-'}</span>
-              </div>
-            </ManagementCard>
-          ))}
+            );
+          })}
         </ManagementGrid>
       )}
 

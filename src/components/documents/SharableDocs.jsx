@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Trash2, FileText, Download, CheckCircle, User, Building2,
+  CheckSquare, Square, X as XIcon,
 } from 'lucide-react';
 import SelectField from '../common/SelectField';
 import Pagination, { usePagination } from '../common/PaginationComponent';
@@ -56,6 +57,10 @@ export default function SharableDocs({ refreshTrigger }) {
 
   const { pagination, updatePagination, changeLimit, goToPage } = usePagination(1, 20);
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  /* Bulk selection */
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -176,6 +181,9 @@ export default function SharableDocs({ refreshTrigger }) {
     return () => { clearTimeout(timer); docsAbortRef.current?.abort(); };
   }, [fetchDocuments, refreshTrigger]);
 
+  /* Clear selection when documents change */
+  useEffect(() => { setSelectedIds(new Set()); }, [documents]);
+
   /* ── File upload ── */
   const handleFileSelect = async (file) => {
     if (!file) return;
@@ -253,8 +261,67 @@ export default function SharableDocs({ refreshTrigger }) {
     setDownloading(null);
   };
 
-  /* ── Table columns ── */
+  /* ── Bulk selection helpers ── */
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = documents.length > 0 && documents.every(d => selectedIds.has(d.document_id));
+  const someSelected = !allSelected && documents.some(d => selectedIds.has(d.document_id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(documents.map(d => d.document_id)));
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    const selected = documents.filter(d => selectedIds.has(d.document_id)).filter(d => d.file || d.url);
+    if (!selected.length) { toast.error('No downloadable files selected'); return; }
+    setIsBulkDownloading(true);
+    const toastId = toast.loading(`Downloading 0 / ${selected.length}…`);
+    let done = 0;
+    for (const doc of selected) {
+      await triggerDownload(doc.file || doc.url, doc.name || 'document');
+      done++;
+      toast.loading(`Downloading ${done} / ${selected.length}…`, { id: toastId });
+    }
+    toast.success(`Downloaded ${done} file${done !== 1 ? 's' : ''}`, { id: toastId });
+    setIsBulkDownloading(false);
+    setSelectedIds(new Set());
+  };
+
+  /* ── Table columns (checkbox + data) ── */
+  const checkboxColumn = {
+    key: '__select__',
+    label: (
+      <button onClick={toggleSelectAll} className="flex items-center justify-center">
+        {allSelected
+          ? <CheckSquare size={16} className="text-indigo-500" />
+          : someSelected
+            ? <CheckSquare size={16} className="text-indigo-300" />
+            : <Square size={16} className="text-slate-400" />}
+      </button>
+    ),
+    headerClassName: 'w-10 text-center',
+    className: 'w-10 text-center',
+    render: (row) => (
+      <button onClick={(e) => { e.stopPropagation(); toggleSelect(row.document_id); }} className="flex items-center justify-center">
+        {selectedIds.has(row.document_id)
+          ? <CheckSquare size={16} className="text-indigo-500" />
+          : <Square size={16} className="text-slate-300 hover:text-slate-500" />}
+      </button>
+    ),
+  };
+
   const tableColumns = [
+    checkboxColumn,
     {
       key: 'name',
       label: 'Document Name',
@@ -352,6 +419,33 @@ export default function SharableDocs({ refreshTrigger }) {
         }
       />
 
+      {/* ── Bulk Download Bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+          <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+            {selectedIds.size} document{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkDownload}
+              disabled={isBulkDownloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-semibold rounded-md transition-colors"
+            >
+              {isBulkDownloading
+                ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Download size={13} />}
+              {isBulkDownloading ? 'Downloading…' : 'Download Selected'}
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="flex items-center gap-1 px-2 py-1.5 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-md text-xs transition-colors"
+            >
+              <XIcon size={13} /> Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Content ── */}
       {isLoading ? (
         <PageContentSkeleton viewMode={viewMode} columns={4} rows={4} />
@@ -373,30 +467,38 @@ export default function SharableDocs({ refreshTrigger }) {
       ) : (
         <ManagementGrid viewMode={viewMode}>
           {documents.map((doc) => {
-
+            const isSelected = selectedIds.has(doc.document_id);
             return (
-              <ManagementCard
-                key={doc.document_id}
-                title={doc.name || 'Unnamed'}
-                subtitle={doc.firm?.name || ''}
-                accent="indigo"
-                icon={<FileText size={16} />}
-                badge={null}
-                actions={getRowActions(doc)}
-                menuId={`menu-${doc.document_id}`}
-                activeId={activeMenuId}
-                onToggle={(e, id) => setActiveMenuId(id)}
-              >
-                {/* Compact meta rows */}
-              <div className="mt-2 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-medium">Firm</span>
-                <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{doc.firm?.name || '-'}</span>
+              <div key={doc.document_id} className="relative">
+                <button
+                  onClick={() => toggleSelect(doc.document_id)}
+                  className={`absolute top-2 left-2 z-10 rounded-md p-0.5 transition-colors ${
+                    isSelected ? 'text-indigo-500' : 'text-slate-300 hover:text-slate-500'
+                  }`}
+                >
+                  {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
+                </button>
+                <ManagementCard
+                  title={doc.name || 'Unnamed'}
+                  subtitle={doc.firm?.name || ''}
+                  accent={isSelected ? 'indigo' : 'indigo'}
+                  icon={<FileText size={16} />}
+                  badge={null}
+                  actions={getRowActions(doc)}
+                  menuId={`menu-${doc.document_id}`}
+                  activeId={activeMenuId}
+                  onToggle={(e, id) => setActiveMenuId(id)}
+                >
+                  <div className="mt-2 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">Firm</span>
+                    <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{doc.firm?.name || '-'}</span>
+                  </div>
+                  <div className="mt-1 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">Created By</span>
+                    <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{doc.create_by?.name || '-'}</span>
+                  </div>
+                </ManagementCard>
               </div>
-              <div className="mt-1 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-medium">Created By</span>
-                <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{doc.create_by?.name || '-'}</span>
-              </div>
-              </ManagementCard>
             );
           })}
         </ManagementGrid>
