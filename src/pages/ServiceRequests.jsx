@@ -136,7 +136,7 @@ export default function ServiceRequests() {
   const fetchServices = async (search = '') => {
     setServiceIsLoading(true);
     try {
-      const response = await apiCall(`/service/list?page_no=1&limit=50&search=${encodeURIComponent(search)}`, 'GET');
+      const response = await apiCall(`/service/list?page_no=1&limit=50&search=${encodeURIComponent(search)}&type=general`, 'GET');
       const data = await response.json();
       if (response.ok && data.success !== false) {
         setServiceOptions((data.data || []).map(s => ({ label: s.name, value: s.service_id })));
