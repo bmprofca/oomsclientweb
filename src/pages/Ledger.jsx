@@ -163,15 +163,15 @@ export default function Ledger() {
       const resData = await response.json();
       if (response.ok && resData.success && resData.data?.url) {
         toast.success(resData.message || 'Invoice PDF generated successfully', { id: loadingToast });
-        
+
         const fileUrl = resData.data.url;
         const suggestedName = resData.data.suggested_filename || resData.data.filename || 'invoice.pdf';
-        
+
         try {
           const fileRes = await fetch(fileUrl);
           const blob = await fileRes.blob();
           const blobUrl = window.URL.createObjectURL(blob);
-          
+
           const link = document.createElement('a');
           link.href = blobUrl;
           link.download = suggestedName;
@@ -267,8 +267,8 @@ export default function Ledger() {
       render: (row) => {
         const val = row.payment?.debit;
         return (
-          <span className={`font-semibold tabular-nums ${val ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
-            {val ? formatAmount(val) : '—'}
+          <span className={`font-semibold tabular-nums ${val != null ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
+            {val != null ? formatAmount(val) : '—'}
           </span>
         );
       },
@@ -281,8 +281,8 @@ export default function Ledger() {
       render: (row) => {
         const val = row.payment?.credit;
         return (
-          <span className={`font-semibold tabular-nums ${val ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
-            {val ? formatAmount(val) : '—'}
+          <span className={`font-semibold tabular-nums ${val != null ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'} ${row.isOpeningBalance ? 'font-bold' : ''}`}>
+            {val != null ? formatAmount(val) : '—'}
           </span>
         );
       },
@@ -350,7 +350,7 @@ export default function Ledger() {
         {/* Unified Filters Bar */}
         <div className="bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-md border border-slate-200 dark:border-gray-700 flex flex-col lg:flex-row gap-3 lg:items-center justify-between shadow-sm">
           <div className="flex flex-col sm:flex-row flex-1 gap-2 sm:gap-3 w-full lg:w-auto items-stretch sm:items-center">
-            
+
             {/* Date Shifter Input Group */}
             <div className="flex items-center gap-1.5 w-full sm:w-auto">
               <button
@@ -361,7 +361,7 @@ export default function Ledger() {
               >
                 <FaChevronLeft size={10} />
               </button>
-              
+
               <div className="flex-1 sm:flex-none min-w-[200px]">
                 <AdvancedDateFilter
                   value={dateFilter}
