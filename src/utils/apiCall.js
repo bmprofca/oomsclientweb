@@ -1,6 +1,11 @@
 import toast from 'react-hot-toast';
 
-const API_BASE = "https://api.ooms.in/client";
+// BASE_API_URL — set via REACT_APP_BASE_API_URL in .env / .env.development / .env.production
+// Points at SERVER routes_client mounted at /client
+const API_BASE = (process.env.REACT_APP_BASE_API_URL || 'http://localhost:8877/client').replace(/\/$/, '');
+const ONESAAS_UPLOAD_URL =
+  process.env.REACT_APP_ONESAAS_UPLOAD_URL || 'https://upload.onesaas.in/api/upload';
+const ONESAAS_UPLOAD_KEY = process.env.REACT_APP_ONESAAS_UPLOAD_KEY || 'onedevelopers';
 
 /**
  * Unified API calling utility
@@ -112,10 +117,10 @@ export const uploadFile = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch('https://upload.onesaas.in/api/upload', {
+  const response = await fetch(ONESAAS_UPLOAD_URL, {
     method: 'POST',
     headers: {
-      'key': 'onedevelopers'
+      'key': ONESAAS_UPLOAD_KEY
     },
     body: formData
   });
