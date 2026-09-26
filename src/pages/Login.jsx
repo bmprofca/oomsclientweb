@@ -4,13 +4,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { apiCall } from "../utils/apiCall";
 import OomsAuthShell from "../components/auth/OomsAuthShell";
 import AuthPortalSwitcher from "../components/auth/AuthPortalSwitcher";
-import { portalRegisterUrl } from "../config/portalUrls";
 
 export default function Login() {
   const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [mobile, setMobile] = useState("");
-  const [countryCode, setCountryCode] = useState("91");
   const [otp, setOtp] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
@@ -46,7 +44,6 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       const response = await apiCall("/auth/login/send-otp", "POST", {
-        country_code: countryCode,
         mobile,
       });
       const data = await response.json();
@@ -73,7 +70,6 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       const response = await apiCall("/auth/login", "POST", {
-        country_code: countryCode,
         mobile: mobileSent,
         otp,
       });
@@ -94,7 +90,7 @@ export default function Login() {
           if (profileData.data.length === 1) {
             setLoginSuccess(true);
             login(data.token, profileData.data[0], {
-              countrycode: countryCode,
+              countrycode: "91",
               mobile: mobileSent,
             });
           } else {
@@ -118,7 +114,7 @@ export default function Login() {
 
   const handleProfileSelect = (profile) => {
     setLoginSuccess(true);
-    login(tempToken, profile, { countrycode: countryCode, mobile: mobileSent });
+    login(tempToken, profile, { countrycode: "91", mobile: mobileSent });
   };
 
   const goBack = () => {
@@ -133,14 +129,16 @@ export default function Login() {
   return (
     <OomsAuthShell
       portalLabel="Client"
-      leftTitle={
-        <>
-          Your client
-          <br />
-          workspace.
-        </>
-      }
-      leftSubtitle="Track work shared by your firm. Sign in with the mobile number registered by your office."
+      features={[
+        { icon: "✅", label: "Live task progress" },
+        { icon: "📁", label: "Shared documents & files" },
+        { icon: "🔔", label: "Firm updates & alerts" },
+        { icon: "🛠️", label: "Service requests" },
+        { icon: "💬", label: "Messages from your office" },
+        { icon: "📅", label: "Deadlines & reminders" },
+        { icon: "🧾", label: "Bills & payment status" },
+        { icon: "👤", label: "Multi-profile access" },
+      ]}
       footerNote="Secure client portal — all access is monitored"
     >
       <AuthPortalSwitcher active="client" />
@@ -155,7 +153,7 @@ export default function Login() {
             {step === 1
               ? "Secure access to your client portal"
               : step === 2
-                ? `Code sent to +${countryCode} ${mobileSent}`
+                ? `Code sent to ${mobileSent}`
                 : "Select a profile to continue"}
           </p>
           <div className="flex gap-1.5 justify-center mt-3">
@@ -184,31 +182,19 @@ export default function Login() {
 
       {step === 1 && !loginSuccess && (
         <form onSubmit={handleSendOtp} className="animate-fade-in space-y-4">
-          <div className="flex gap-2">
-            <div className="w-20">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                Code
-              </label>
-              <input
-                value={`+${countryCode}`}
-                onChange={(e) => setCountryCode(e.target.value.replace(/\D/g, ""))}
-                className="w-full px-3 py-3 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
-                disabled={isSubmitting}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                Mobile Number
-              </label>
-              <input
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                placeholder="10-digit mobile"
-                className="w-full px-4 py-3 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
-                disabled={isSubmitting}
-                inputMode="numeric"
-              />
-            </div>
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+              Mobile Number
+            </label>
+            <input
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="10-digit mobile number"
+              className="w-full px-4 py-3 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              disabled={isSubmitting}
+              inputMode="numeric"
+              maxLength={10}
+            />
           </div>
           <button
             type="submit"
@@ -313,18 +299,6 @@ export default function Login() {
             <FiArrowLeft size={13} /> Back to Login
           </button>
         </div>
-      )}
-
-      {!loginSuccess && step === 1 && (
-        <p className="text-center text-[11px] text-slate-400 font-semibold pt-1">
-          Need an office account?{" "}
-          <a
-            href={portalRegisterUrl()}
-            className="text-[#5c3fe6] font-bold hover:underline"
-          >
-            Register on Office
-          </a>
-        </p>
       )}
 
       {!loginSuccess && (
