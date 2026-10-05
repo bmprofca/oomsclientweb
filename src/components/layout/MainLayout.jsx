@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import ProfileSelectionModal from '../ProfileSelectionModal';
+import { VoiceCallOverlay, VoiceCallProvider } from '../../contexts/VoiceCallContext';
 
 const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -66,6 +67,7 @@ const MainLayout = ({ children }) => {
   };
 
   return (
+    <VoiceCallProvider>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-950 dark:to-gray-900 transition-colors duration-300">
       <Navbar
         toggleSidebar={toggleSidebar}
@@ -112,6 +114,8 @@ const MainLayout = ({ children }) => {
       </div> 
       <ProfileSelectionModal />
     </div>
+    <VoiceCallOverlay />
+    </VoiceCallProvider>
   );
 };
 

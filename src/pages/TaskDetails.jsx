@@ -10,6 +10,7 @@ import {
 import { apiCall } from '../utils/apiCall';
 import toast from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ClientStaffCallButton } from '../contexts/VoiceCallContext';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -289,6 +290,8 @@ export default function TaskDetails() {
   }
 
   const { firm, service, charges, dates, billing, staffs, status, billing_status, is_recurring, status_log = [] } = task;
+  const canCallAssignedStaff = ['in process', 'pending from client', 'pending from department']
+    .includes(String(status || '').trim().toLowerCase());
 
   return (
     <div className="mx-auto space-y-2">
@@ -458,10 +461,11 @@ export default function TaskDetails() {
                     <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold">
                       {(staff.name || 'S')[0].toUpperCase()}
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{staff.name || staff.username || 'Staff'}</p>
                       {staff.role && <p className="text-xs text-slate-400">{staff.role}</p>}
                     </div>
+                    {canCallAssignedStaff && staff.username && <ClientStaffCallButton staff={staff} />}
                   </div>
                 ))}
               </div>
