@@ -231,6 +231,7 @@ export function ClientStaffCallButton({ staff }) {
   const [availability, setAvailability] = useState({
     checking: true,
     canCall: false,
+    isOnline: false,
     reason: '',
   });
   const activeCall = call && !TERMINAL_STATUSES.has(call.status);
@@ -248,12 +249,23 @@ export function ClientStaffCallButton({ staff }) {
     }
 
     setAvailability({ checking: true, canCall: false, reason: '' });
-    voiceCallApi.clientCapability(staff.username)
-      .then((response) => {
+    let unsubscribe;
+    voiceCallApi.watchClientCapability(staff.username, (update) => {
+      if (!active || !update?.success) return;
+      setAvailability({
+        checking: false,
+        canCall: Boolean(update.data?.can_call),
+        isOnline: Boolean(update.data?.is_online),
+        reason: update.data?.reason || '',
+      });
+    }).then((watch) => {
+      unsubscribe = watch.unsubscribe;
         if (!active) return;
+        const response = watch.capability;
         setAvailability({
           checking: false,
           canCall: Boolean(response?.data?.can_call),
+          isOnline: Boolean(response?.data?.is_online),
           reason: response?.data?.reason || '',
         });
       })
@@ -269,6 +281,7 @@ export function ClientStaffCallButton({ staff }) {
 
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, [staff?.username]);
 
