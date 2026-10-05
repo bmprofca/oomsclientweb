@@ -1,3 +1,5 @@
+import { requestClientVoiceCallCapability } from './voiceCallSocket';
+
 const SERVER_BASE_URL = (
   process.env.REACT_APP_BASE_API_URL || 'https://server.ooms.in/client'
 ).replace(/\/client\/?$/, '').replace(/\/$/, '');
@@ -74,7 +76,7 @@ export const voiceCallApi = {
   getIncoming: () => request('/client/incoming'),
   getClientCall: (callId) => request(`/client/${encodeURIComponent(callId)}`),
   clientCapability: (staffUsername) =>
-    request(`/client/capability?staff_username=${encodeURIComponent(staffUsername)}`),
+    requestClientVoiceCallCapability(staffUsername),
   createClientCall: (staffUsername) =>
     request('/client/create', {
       method: 'POST',
