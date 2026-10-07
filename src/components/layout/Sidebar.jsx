@@ -13,6 +13,7 @@ import {
   FileClock,
   MessageSquare,
   Bell,
+  PhoneCall,
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 
@@ -64,7 +65,13 @@ const Sidebar = ({ isMobile, sidebarOpen, toggleSidebar, onHover, isExpanded }) 
       label: 'Notification',
       path: '/notification',
       roles: ['admin'],
-    }
+    },
+    {
+      icon: PhoneCall,
+      label: 'Call history',
+      path: '/call-history',
+      roles: ['admin'],
+    },
   ];
 
   const menuItems = allMenuItems.filter(item => !item.roles || item.roles.includes(userType));

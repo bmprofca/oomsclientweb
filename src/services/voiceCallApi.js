@@ -76,6 +76,12 @@ async function request(path, { method = 'GET', body, idempotencyKey } = {}) {
 }
 
 export const voiceCallApi = {
+  getHistory: ({ page = 1, limit = 25, status, direction } = {}) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.set('status', status);
+    if (direction) params.set('direction', direction);
+    return request(`/client/history?${params.toString()}`);
+  },
   getIncoming: () => request('/client/incoming'),
   getClientCall: (callId) => request(`/client/${encodeURIComponent(callId)}`),
   clientCapability: (staffUsername) =>

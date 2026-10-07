@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Maximize2, Mic, MicOff, Minimize2, Monitor, Phone, PhoneOff, Square, X } from 'lucide-react';
+import { Building2, Clock3, Maximize2, Mic, MicOff, Minimize2, Monitor, Phone, PhoneOff, Square, UserRound, X } from 'lucide-react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -14,6 +14,12 @@ function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
   const remainder = (seconds % 60).toString().padStart(2, '0');
   return `${minutes}:${remainder}`;
+}
+
+function formatCallTime(value) {
+  if (!value) return '';
+  const date = new Date(String(value).replace(' ', 'T'));
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
 }
 
 function CallActionTransition({ transitionKey, children }) {
@@ -236,7 +242,11 @@ export function VoiceCallProvider({ children }) {
   }, [updateCall]);
 
   const dismissCall = useCallback(() => {
-    if (callRef.current && !TERMINAL_STATUSES.has(callRef.current.status)) return;
+    if (
+      callRef.current &&
+      !TERMINAL_STATUSES.has(callRef.current.status) &&
+      !callRef.current.accepted_on_another_device
+    ) return;
     setError('');
     updateCall(null);
   }, [updateCall]);
@@ -365,9 +375,22 @@ export function VoiceCallOverlay() {
   const roomRef = useRef(null);
   const callId = call?.call_id;
   const status = call?.status;
-  const terminal = Boolean(status && TERMINAL_STATUSES.has(status));
+  const acceptedOnAnotherDevice = Boolean(call?.accepted_on_another_device);
+  const terminal = Boolean(
+    (status && TERMINAL_STATUSES.has(status)) || acceptedOnAnotherDevice,
+  );
   const incoming = call?.direction === 'incoming';
   const endedStatus = status === 'ended' || status === 'cancelled';
+  const isCallPage = status !== 'ringing';
+  const CallFrame = isCallPage ? 'main' : 'div';
+
+  useEffect(() => {
+    if (!callId || status !== 'accepted' || minimized) return undefined;
+    window.history.pushState({ activeVoiceCall: callId }, '', window.location.href);
+    const minimizeOnBack = () => setMinimized(true);
+    window.addEventListener('popstate', minimizeOnBack);
+    return () => window.removeEventListener('popstate', minimizeOnBack);
+  }, [callId, minimized, status]);
 
   useEffect(() => {
     if (!connected) {
@@ -387,7 +410,7 @@ export function VoiceCallOverlay() {
   }, [terminal]);
 
   useEffect(() => {
-    if (!callId || status !== 'accepted') return undefined;
+    if (!callId || status !== 'accepted' || acceptedOnAnotherDevice) return undefined;
 
     let active = true;
     let room;
@@ -420,14 +443,14 @@ export function VoiceCallOverlay() {
             const container = screenShareMount.current;
             if (!container || screenShareTiles.current.has(track)) return;
             const tile = document.createElement('div');
-            tile.className = 'overflow-hidden rounded-lg bg-black';
+            tile.className = 'flex h-full min-h-[280px] w-full flex-col overflow-hidden rounded-lg bg-black';
             const label = document.createElement('p');
-            label.className = 'px-3 py-2 text-left text-xs font-medium text-white';
+            label.className = 'shrink-0 px-4 py-2.5 text-left text-xs font-semibold text-white';
             label.textContent = `${participant.name || 'Participant'} is sharing`;
             const element = track.attach();
             element.autoplay = true;
             element.playsInline = true;
-            element.className = 'max-h-[55vh] w-full object-contain';
+            element.className = 'min-h-0 w-full flex-1 object-contain';
             tile.append(label, element);
             container.appendChild(tile);
             screenShareTiles.current.set(track, tile);
@@ -493,7 +516,7 @@ export function VoiceCallOverlay() {
       disconnect();
       setConnecting(false);
     };
-  }, [callId, status, setError]);
+  }, [acceptedOnAnotherDevice, callId, status, setError]);
 
   useEffect(() => {
     if (!terminal) return undefined;
@@ -545,22 +568,103 @@ export function VoiceCallOverlay() {
 
   if (!call) return null;
   const otherName = call.other_participant_name || 'OOMS team member';
-  const label = connected ? `Voice call connected · ${formatDuration(duration)}` : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
+  const otherUsername = call.other_participant_username;
+  const branchName = call.branch_name || call.branch_id;
+  const callTime = formatCallTime(call.create_date);
+  const label = acceptedOnAnotherDevice
+    ? 'Call answered on another device'
+    : connected ? `Voice call connected · ${formatDuration(duration)}` : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
 
   return (
     <>
-    <div className={`fixed inset-0 z-[100] items-center justify-center bg-slate-950/70 p-4 ${minimized ? 'hidden' : 'flex'}`} role="dialog" aria-modal="true" aria-label="Voice call">
-      <div className={`w-full rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-900 ${remoteScreenCount ? 'max-w-4xl' : 'max-w-sm'}`}>
-        {!terminal ? (
+    <CallFrame
+      className={`fixed inset-0 z-[100] ${isCallPage ? 'flex flex-col bg-slate-50 dark:bg-slate-950' : 'flex items-center justify-center overflow-y-auto bg-slate-950/70 p-4'} ${minimized ? 'hidden' : ''}`}
+      role={isCallPage ? undefined : 'dialog'}
+      aria-modal={isCallPage ? undefined : 'true'}
+      aria-label={incoming ? 'Incoming voice call' : 'Voice call'}
+    >
+      {isCallPage ? (
+        <header className="flex min-h-20 shrink-0 flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
+          <div className="min-w-0 flex-[1_1_20rem]">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">OOMS voice</p>
+              <span className="inline-flex min-h-5 max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{label}</span>
+            </div>
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+              <h1 className="max-w-full truncate text-base font-bold text-slate-900 dark:text-white">{otherName}</h1>
+              {otherUsername ? <p className="min-w-0 max-w-full truncate text-xs text-slate-500 dark:text-slate-400">{otherUsername}</p> : null}
+            </div>
+          </div>
+          {branchName ? (
+            <div className="max-w-[45vw] shrink-0 text-right sm:max-w-[30vw]">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Branch</p>
+              <p className="max-w-full truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{branchName}</p>
+            </div>
+          ) : null}
+          {!terminal ? (
+            <button type="button" onClick={() => setMinimized(true)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-900" aria-label="Back to the app and keep call active" title="Back to app">
+              <Minimize2 size={16} />
+            </button>
+          ) : null}
+        </header>
+      ) : null}
+      <section className={isCallPage
+        ? `relative mx-auto flex min-h-0 w-full flex-1 flex-col text-center ${remoteScreenCount ? 'max-w-none items-stretch justify-start overflow-hidden px-2 py-1' : 'max-w-3xl items-center justify-center overflow-y-auto px-5 py-8'}`
+        : `relative my-auto max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:p-6 ${remoteScreenCount ? 'max-w-4xl' : 'max-w-md'}`
+      }>
+        {!terminal && !(isCallPage && remoteScreenCount) ? (
           <button type="button" onClick={() => setMinimized(true)} className="absolute right-4 top-4 rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Minimize call and return to the app">
             <Minimize2 size={18} />
           </button>
         ) : null}
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300">
-          <Phone size={30} />
-        </div>
-        <h2 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">{otherName}</h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{label}</p>
+        {!remoteScreenCount ? (
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300">
+            <Phone size={30} />
+          </div>
+        ) : null}
+        {incoming && !isCallPage ? (
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-300">
+            Incoming voice call
+          </p>
+        ) : null}
+        {!isCallPage ? <h2 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">{otherName}</h2> : null}
+        {!isCallPage ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{label}</p> : null}
+        {acceptedOnAnotherDevice ? (
+          <p className="mt-4 rounded-lg bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200" role="status">
+            This call was answered on another device.
+          </p>
+        ) : null}
+        {(branchName || otherUsername || callTime) && !isCallPage ? (
+          <div className="mx-auto mt-5 grid w-full max-w-xs gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-slate-700 dark:bg-slate-800/70">
+            {branchName ? (
+              <div className="flex items-start gap-3">
+                <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Calling from branch</p>
+                  <p className="mt-0.5 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{branchName}</p>
+                </div>
+              </div>
+            ) : null}
+            {otherUsername ? (
+              <div className="flex items-start gap-3">
+                <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-blue-700 dark:text-blue-300" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">OOMS account</p>
+                  <p className="mt-0.5 break-all text-sm font-medium text-slate-800 dark:text-slate-100">{otherUsername}</p>
+                </div>
+              </div>
+            ) : null}
+            {callTime ? (
+              <div className="flex items-start gap-3">
+                <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Call received</p>
+                  <p className="mt-0.5 text-sm text-slate-700 dark:text-slate-200">{callTime}</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {endedStatus && call.ended_by_name ? (
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             {status === 'cancelled' ? 'Call cancelled' : 'Call ended'} by {call.ended_by_name}
@@ -569,7 +673,7 @@ export function VoiceCallOverlay() {
         <div ref={audioMount} className="hidden" aria-hidden="true" />
         <div
           ref={screenShareMount}
-          className={`mt-4 grid max-h-[55vh] gap-3 overflow-auto ${connected && remoteScreenCount ? '' : 'hidden'}`}
+          className={`${isCallPage && remoteScreenCount ? 'mt-0 min-h-0 flex-1 rounded-none p-0' : 'mt-2 h-[58vh] min-h-[280px] rounded-xl p-1.5'} grid w-full auto-rows-fr grid-cols-1 gap-2 overflow-hidden bg-slate-950 ${connected && remoteScreenCount ? '' : 'hidden'}`}
           aria-label="Shared screens"
         />
         {connected && screenSharing ? (
@@ -596,9 +700,9 @@ export function VoiceCallOverlay() {
             <PhoneOff size={17} /> Cancel call
           </button>
         ) : null}
-        {status === 'accepted' ? (
+        {status === 'accepted' && !acceptedOnAnotherDevice ? (
           <CallActionTransition transitionKey={status}>
-            <div className="mt-7 flex justify-center gap-4">
+            <div className={`flex shrink-0 justify-center gap-3 ${remoteScreenCount ? 'h-[68px] items-center pb-2' : 'mt-3'}`}>
               <button type="button" onClick={toggleScreenShare} disabled={!connected || screenShareBusy} className={`flex h-12 w-12 items-center justify-center rounded-full ${screenSharing ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'} disabled:opacity-50`} aria-label={screenSharing ? 'Stop sharing screen' : 'Share screen'} title={screenSharing ? 'Stop sharing screen' : 'Share your screen with the other participant'}>
                 <Monitor size={20} />
               </button>
@@ -616,8 +720,8 @@ export function VoiceCallOverlay() {
             <X size={17} /> Close
           </button>
         ) : null}
-      </div>
-    </div>
+      </section>
+    </CallFrame>
     {minimized && !terminal ? (
       <div className="fixed bottom-4 right-4 z-[101] flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-white shadow-xl" role="region" aria-label="Minimized voice call">
         <span className="max-w-40 truncate text-sm">{otherName} · {screenSharing ? `Sharing screen · ${formatDuration(duration)}` : connected ? formatDuration(duration) : 'Connecting'}</span>
