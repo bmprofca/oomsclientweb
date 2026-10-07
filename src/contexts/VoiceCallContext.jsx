@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Maximize2, Mic, MicOff, Minimize2, Monitor, Phone, PhoneOff, X } from 'lucide-react';
+import { Maximize2, Mic, MicOff, Minimize2, Monitor, Phone, PhoneOff, Square, X } from 'lucide-react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -9,6 +9,28 @@ import { startCallTone } from '../services/voiceCallTone';
 
 const VoiceCallContext = createContext(null);
 const TERMINAL_STATUSES = new Set(['rejected', 'cancelled', 'missed', 'ended', 'failed']);
+
+function formatDuration(seconds) {
+  const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const remainder = (seconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${remainder}`;
+}
+
+function CallActionTransition({ transitionKey, children }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setVisible(false);
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, [transitionKey]);
+
+  return (
+    <div className={`transition-all duration-300 ease-out ${visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}>
+      {children}
+    </div>
+  );
+}
 
 export function useVoiceCalls() {
   const context = useContext(VoiceCallContext);
@@ -335,6 +357,7 @@ export function VoiceCallOverlay() {
   const [screenSharing, setScreenSharing] = useState(false);
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [duration, setDuration] = useState(0);
   const [remoteScreenCount, setRemoteScreenCount] = useState(0);
   const audioMount = useRef(null);
   const screenShareMount = useRef(null);
@@ -345,6 +368,15 @@ export function VoiceCallOverlay() {
   const terminal = Boolean(status && TERMINAL_STATUSES.has(status));
   const incoming = call?.direction === 'incoming';
   const endedStatus = status === 'ended' || status === 'cancelled';
+
+  useEffect(() => {
+    if (!connected) {
+      setDuration(0);
+      return undefined;
+    }
+    const interval = window.setInterval(() => setDuration((seconds) => seconds + 1), 1000);
+    return () => window.clearInterval(interval);
+  }, [callId, connected]);
 
   useEffect(() => {
     setMinimized(false);
@@ -513,7 +545,7 @@ export function VoiceCallOverlay() {
 
   if (!call) return null;
   const otherName = call.other_participant_name || 'OOMS team member';
-  const label = connected ? 'Voice call connected' : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
+  const label = connected ? `Voice call connected · ${formatDuration(duration)}` : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
 
   return (
     <>
@@ -548,14 +580,16 @@ export function VoiceCallOverlay() {
         {error ? <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300" role="alert">{error}</p> : null}
 
         {status === 'ringing' && incoming ? (
-          <div className="mt-7 flex justify-center gap-5">
-            <button type="button" onClick={() => respondToCall('decline')} disabled={working} className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" aria-label="Decline call">
-              <PhoneOff size={22} />
-            </button>
-            <button type="button" onClick={() => respondToCall('accept')} disabled={working} className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50" aria-label="Accept call">
-              <Phone size={22} />
-            </button>
-          </div>
+          <CallActionTransition transitionKey={status}>
+            <div className="mt-7 flex justify-center gap-5">
+              <button type="button" onClick={() => respondToCall('decline')} disabled={working} className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-transform duration-200 hover:scale-110 hover:bg-red-700 disabled:opacity-50" aria-label="Decline call">
+                <PhoneOff size={22} />
+              </button>
+              <button type="button" onClick={() => respondToCall('accept')} disabled={working} className="flex h-14 w-14 animate-pulse items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg transition-transform duration-200 hover:scale-110 hover:bg-emerald-700 disabled:opacity-50" aria-label="Accept call">
+                <Phone size={22} />
+              </button>
+            </div>
+          </CallActionTransition>
         ) : null}
         {status === 'ringing' && !incoming ? (
           <button type="button" onClick={endCall} disabled={working} className="mt-7 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
@@ -563,17 +597,19 @@ export function VoiceCallOverlay() {
           </button>
         ) : null}
         {status === 'accepted' ? (
-          <div className="mt-7 flex justify-center gap-4">
-            <button type="button" onClick={toggleScreenShare} disabled={!connected || screenShareBusy} className={`flex h-12 w-12 items-center justify-center rounded-full ${screenSharing ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'} disabled:opacity-50`} aria-label={screenSharing ? 'Stop sharing screen' : 'Share screen'} title={screenSharing ? 'Stop sharing screen' : 'Share your screen with the other participant'}>
-              <Monitor size={20} />
-            </button>
-            <button type="button" onClick={toggleMute} disabled={!connected} className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200" aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}>
-              {muted ? <MicOff size={20} /> : <Mic size={20} />}
-            </button>
-            <button type="button" onClick={endCall} disabled={working} className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" aria-label="End call">
-              <PhoneOff size={20} />
-            </button>
-          </div>
+          <CallActionTransition transitionKey={status}>
+            <div className="mt-7 flex justify-center gap-4">
+              <button type="button" onClick={toggleScreenShare} disabled={!connected || screenShareBusy} className={`flex h-12 w-12 items-center justify-center rounded-full ${screenSharing ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'} disabled:opacity-50`} aria-label={screenSharing ? 'Stop sharing screen' : 'Share screen'} title={screenSharing ? 'Stop sharing screen' : 'Share your screen with the other participant'}>
+                <Monitor size={20} />
+              </button>
+              <button type="button" onClick={toggleMute} disabled={!connected} className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200" aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}>
+                {muted ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+              <button type="button" onClick={endCall} disabled={working} className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" aria-label="End call">
+                <PhoneOff size={20} />
+              </button>
+            </div>
+          </CallActionTransition>
         ) : null}
         {terminal ? (
           <button type="button" onClick={dismissCall} className="mt-7 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
@@ -584,10 +620,15 @@ export function VoiceCallOverlay() {
     </div>
     {minimized && !terminal ? (
       <div className="fixed bottom-4 right-4 z-[101] flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-white shadow-xl" role="region" aria-label="Minimized voice call">
-        <span className="max-w-40 truncate text-sm">{otherName} · {screenSharing ? 'Sharing screen' : connected ? 'Call active' : 'Connecting'}</span>
+        <span className="max-w-40 truncate text-sm">{otherName} · {screenSharing ? `Sharing screen · ${formatDuration(duration)}` : connected ? formatDuration(duration) : 'Connecting'}</span>
+        {connected ? (
+          <button type="button" onClick={toggleMute} className="rounded-full p-2 hover:bg-slate-700" aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}>
+            {muted ? <MicOff size={16} /> : <Mic size={16} />}
+          </button>
+        ) : null}
         {screenSharing ? (
           <button type="button" onClick={toggleScreenShare} disabled={screenShareBusy} className="rounded-full p-2 text-emerald-300 hover:bg-slate-700 disabled:opacity-50" aria-label="Stop sharing screen">
-            <Monitor size={16} />
+            <Square size={16} />
           </button>
         ) : null}
         <button type="button" onClick={() => setMinimized(false)} className="rounded-full p-2 hover:bg-slate-700" aria-label="Return to call">
