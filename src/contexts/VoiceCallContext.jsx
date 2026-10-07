@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Phone, PhoneOff, X } from 'lucide-react';
+import { Maximize2, Mic, MicOff, Minimize2, Monitor, Phone, PhoneOff, X } from 'lucide-react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -332,13 +332,27 @@ export function VoiceCallOverlay() {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [screenSharing, setScreenSharing] = useState(false);
+  const [screenShareBusy, setScreenShareBusy] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const [remoteScreenCount, setRemoteScreenCount] = useState(0);
   const audioMount = useRef(null);
+  const screenShareMount = useRef(null);
+  const screenShareTiles = useRef(new Map());
   const roomRef = useRef(null);
   const callId = call?.call_id;
   const status = call?.status;
   const terminal = Boolean(status && TERMINAL_STATUSES.has(status));
   const incoming = call?.direction === 'incoming';
   const endedStatus = status === 'ended' || status === 'cancelled';
+
+  useEffect(() => {
+    setMinimized(false);
+  }, [callId]);
+
+  useEffect(() => {
+    if (terminal) setMinimized(false);
+  }, [terminal]);
 
   useEffect(() => {
     if (!callId || status !== 'accepted') return undefined;
@@ -349,9 +363,17 @@ export function VoiceCallOverlay() {
     const disconnect = () => {
       attachedTracks.forEach((track) => track.detach().forEach((element) => element.remove()));
       attachedTracks.clear();
+      screenShareTiles.current.forEach((tile) => tile.remove());
+      screenShareTiles.current.clear();
       if (roomRef.current === room) roomRef.current = null;
       room?.disconnect();
-      if (active) setConnected(false);
+      if (audioMount.current) audioMount.current.replaceChildren();
+      if (screenShareMount.current) screenShareMount.current.replaceChildren();
+      if (active) {
+        setConnected(false);
+        setScreenSharing(false);
+        setRemoteScreenCount(0);
+      }
     };
     const connect = async () => {
       setConnecting(true);
@@ -361,7 +383,25 @@ export function VoiceCallOverlay() {
         if (!active) return;
         room = new Room({ adaptiveStream: false, dynacast: false });
         roomRef.current = room;
-        room.on(RoomEvent.TrackSubscribed, (track) => {
+        room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          if (publication.source === Track.Source.ScreenShare) {
+            const container = screenShareMount.current;
+            if (!container || screenShareTiles.current.has(track)) return;
+            const tile = document.createElement('div');
+            tile.className = 'overflow-hidden rounded-lg bg-black';
+            const label = document.createElement('p');
+            label.className = 'px-3 py-2 text-left text-xs font-medium text-white';
+            label.textContent = `${participant.name || 'Participant'} is sharing`;
+            const element = track.attach();
+            element.autoplay = true;
+            element.playsInline = true;
+            element.className = 'max-h-[55vh] w-full object-contain';
+            tile.append(label, element);
+            container.appendChild(tile);
+            screenShareTiles.current.set(track, tile);
+            setRemoteScreenCount(screenShareTiles.current.size);
+            return;
+          }
           if (track.kind !== Track.Kind.Audio) return;
           const element = track.attach();
           element.autoplay = true;
@@ -374,9 +414,29 @@ export function VoiceCallOverlay() {
         room.on(RoomEvent.TrackUnsubscribed, (track) => {
           track.detach().forEach((element) => element.remove());
           attachedTracks.delete(track);
+          screenShareTiles.current.get(track)?.remove();
+          if (screenShareTiles.current.delete(track)) {
+            setRemoteScreenCount(screenShareTiles.current.size);
+          }
+        });
+        room.on(RoomEvent.LocalTrackPublished, (publication) => {
+          if (publication.source === Track.Source.ScreenShare) {
+            setScreenSharing(true);
+            setMinimized(true);
+          }
+        });
+        room.on(RoomEvent.LocalTrackUnpublished, (publication) => {
+          if (publication.source === Track.Source.ScreenShare) setScreenSharing(false);
         });
         room.on(RoomEvent.Disconnected, () => {
-          if (active) setConnected(false);
+          if (active) {
+            setConnected(false);
+            setScreenSharing(false);
+            screenShareTiles.current.forEach((tile) => tile.remove());
+            screenShareTiles.current.clear();
+            setRemoteScreenCount(0);
+            if (screenShareMount.current) screenShareMount.current.replaceChildren();
+          }
         });
         await room.connect(response.data.server_url, response.data.token);
         if (!active) {
@@ -411,6 +471,11 @@ export function VoiceCallOverlay() {
     room.disconnect();
     roomRef.current = null;
     setConnected(false);
+    setScreenSharing(false);
+    setRemoteScreenCount(0);
+    screenShareTiles.current.forEach((tile) => tile.remove());
+    screenShareTiles.current.clear();
+    if (screenShareMount.current) screenShareMount.current.replaceChildren();
     return undefined;
   }, [terminal]);
 
@@ -425,13 +490,40 @@ export function VoiceCallOverlay() {
     }
   };
 
+  const toggleScreenShare = async () => {
+    const room = roomRef.current;
+    if (!room || screenShareBusy) return;
+    if (!screenSharing && !navigator.mediaDevices?.getDisplayMedia) {
+      setError('Screen sharing is not supported by this browser.');
+      return;
+    }
+    setScreenShareBusy(true);
+    setError('');
+    try {
+      await room.localParticipant.setScreenShareEnabled(!screenSharing);
+      const sharing = room.localParticipant.isScreenShareEnabled;
+      setScreenSharing(sharing);
+      if (sharing) setMinimized(true);
+    } catch (shareError) {
+      setError(shareError?.message || 'Unable to start screen sharing. Check your browser permissions and try again.');
+    } finally {
+      setScreenShareBusy(false);
+    }
+  };
+
   if (!call) return null;
   const otherName = call.other_participant_name || 'OOMS team member';
   const label = connected ? 'Voice call connected' : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-label="Voice call">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+    <>
+    <div className={`fixed inset-0 z-[100] items-center justify-center bg-slate-950/70 p-4 ${minimized ? 'hidden' : 'flex'}`} role="dialog" aria-modal="true" aria-label="Voice call">
+      <div className={`w-full rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-900 ${remoteScreenCount ? 'max-w-4xl' : 'max-w-sm'}`}>
+        {!terminal ? (
+          <button type="button" onClick={() => setMinimized(true)} className="absolute right-4 top-4 rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Minimize call and return to the app">
+            <Minimize2 size={18} />
+          </button>
+        ) : null}
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300">
           <Phone size={30} />
         </div>
@@ -443,6 +535,16 @@ export function VoiceCallOverlay() {
           </p>
         ) : null}
         <div ref={audioMount} className="hidden" aria-hidden="true" />
+        <div
+          ref={screenShareMount}
+          className={`mt-4 grid max-h-[55vh] gap-3 overflow-auto ${connected && remoteScreenCount ? '' : 'hidden'}`}
+          aria-label="Shared screens"
+        />
+        {connected && screenSharing ? (
+          <p className="mt-3 text-xs font-medium text-emerald-700 dark:text-emerald-300" role="status" aria-live="polite">
+            Your screen is being shared with the other participant.
+          </p>
+        ) : null}
         {error ? <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300" role="alert">{error}</p> : null}
 
         {status === 'ringing' && incoming ? (
@@ -462,6 +564,9 @@ export function VoiceCallOverlay() {
         ) : null}
         {status === 'accepted' ? (
           <div className="mt-7 flex justify-center gap-4">
+            <button type="button" onClick={toggleScreenShare} disabled={!connected || screenShareBusy} className={`flex h-12 w-12 items-center justify-center rounded-full ${screenSharing ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'} disabled:opacity-50`} aria-label={screenSharing ? 'Stop sharing screen' : 'Share screen'} title={screenSharing ? 'Stop sharing screen' : 'Share your screen with the other participant'}>
+              <Monitor size={20} />
+            </button>
             <button type="button" onClick={toggleMute} disabled={!connected} className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200" aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}>
               {muted ? <MicOff size={20} /> : <Mic size={20} />}
             </button>
@@ -477,5 +582,22 @@ export function VoiceCallOverlay() {
         ) : null}
       </div>
     </div>
+    {minimized && !terminal ? (
+      <div className="fixed bottom-4 right-4 z-[101] flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-white shadow-xl" role="region" aria-label="Minimized voice call">
+        <span className="max-w-40 truncate text-sm">{otherName} · {screenSharing ? 'Sharing screen' : connected ? 'Call active' : 'Connecting'}</span>
+        {screenSharing ? (
+          <button type="button" onClick={toggleScreenShare} disabled={screenShareBusy} className="rounded-full p-2 text-emerald-300 hover:bg-slate-700 disabled:opacity-50" aria-label="Stop sharing screen">
+            <Monitor size={16} />
+          </button>
+        ) : null}
+        <button type="button" onClick={() => setMinimized(false)} className="rounded-full p-2 hover:bg-slate-700" aria-label="Return to call">
+          <Maximize2 size={16} />
+        </button>
+        <button type="button" onClick={endCall} disabled={working} className="rounded-full bg-red-600 p-2 hover:bg-red-700 disabled:opacity-50" aria-label="End call">
+          <PhoneOff size={16} />
+        </button>
+      </div>
+    ) : null}
+    </>
   );
 }
