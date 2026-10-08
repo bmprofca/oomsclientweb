@@ -7,13 +7,35 @@ const API_BASE = (
     .replace(/\/$/, '')}/api/v1/voice-calls`
 ).replace(/\/$/, '');
 
+export function getClientVoiceCallSessionId() {
+  let sessionId = sessionStorage.getItem('ooms_voice_call_session_id');
+  if (!sessionId) {
+    sessionId = `web:${window.crypto.randomUUID()}`;
+    sessionStorage.setItem('ooms_voice_call_session_id', sessionId);
+  }
+  return sessionId;
+}
+
 export function connectClientVoiceCallSocket() {
+  const user = readClientSession();
   const socket = io(new URL(API_BASE).origin, {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
     timeout: 10000,
     autoConnect: false,
+  });
+  socket.on('connect', () => {
+    socket.emit('voice_call_auth', {
+      username: user.username,
+      token: user.token,
+      voice_call_session_id: getClientVoiceCallSessionId(),
+    }, (response) => {
+      if (!response?.authenticated) {
+        console.error('Client voice-call socket authentication failed.');
+        socket.disconnect();
+      }
+    });
   });
   socket.connect();
   return socket;

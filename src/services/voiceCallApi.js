@@ -1,4 +1,5 @@
 import {
+  getClientVoiceCallSessionId,
   requestClientVoiceCallCapability,
   watchClientVoiceCallCapability,
 } from './voiceCallSocket';
@@ -30,6 +31,7 @@ function getSessionHeaders() {
     token: user.token,
     username: user.username,
     'Content-Type': 'application/json',
+    'x-voice-call-session-id': getClientVoiceCallSessionId(),
   };
   const mobile = user.mobile;
   const countryCode = user?.country_code || user?.countrycode || user?.countryCode;

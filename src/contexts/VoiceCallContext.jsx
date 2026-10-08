@@ -56,6 +56,25 @@ export function VoiceCallProvider({ children }) {
     callRef.current = value;
     setCall(value);
   }, []);
+  const dismissAnsweredCall = useCallback((event) => {
+    const current = callRef.current;
+    if (
+      current?.direction !== 'incoming' ||
+      String(current.call_id) !== String(event?.call_id)
+    ) return;
+    const answeredByName = String(event.answered_by_name || 'Another OOMS user');
+    updateCall(null);
+    toast(`${answeredByName} already answered this call.`);
+  }, [updateCall]);
+  const dismissCancelledCall = useCallback((event) => {
+    const current = callRef.current;
+    if (
+      current?.direction !== 'incoming' ||
+      String(current.call_id) !== String(event?.call_id) ||
+      current.status !== 'ringing'
+    ) return;
+    updateCall(null);
+  }, [updateCall]);
 
   useEffect(() => {
     if (call?.status !== 'ringing') return undefined;
@@ -125,6 +144,8 @@ export function VoiceCallProvider({ children }) {
     };
     socket.on('connect', onConnect);
     socket.on('voice_call_incoming', acceptIncomingCall);
+    socket.on('voice_call_answered', dismissAnsweredCall);
+    socket.on('voice_call_cancelled', dismissCancelledCall);
     socket.on('connect_error', onConnectError);
     window.addEventListener('focus', recoverWhenVisible);
     document.addEventListener('visibilitychange', recoverWhenVisible);
@@ -132,12 +153,14 @@ export function VoiceCallProvider({ children }) {
       active = false;
       socket.off('connect', onConnect);
       socket.off('voice_call_incoming', acceptIncomingCall);
+      socket.off('voice_call_answered', dismissAnsweredCall);
+      socket.off('voice_call_cancelled', dismissCancelledCall);
       socket.off('connect_error', onConnectError);
       window.removeEventListener('focus', recoverWhenVisible);
       document.removeEventListener('visibilitychange', recoverWhenVisible);
       socket.disconnect();
     };
-  }, [userData?.token, userData?.username, updateCall]);
+  }, [userData?.token, userData?.username, updateCall, dismissAnsweredCall, dismissCancelledCall]);
 
   useEffect(() => {
     if (!call?.call_id || TERMINAL_STATUSES.has(call.status)) return undefined;
@@ -151,6 +174,24 @@ export function VoiceCallProvider({ children }) {
       try {
         const response = await voiceCallApi.getClientCall(call.call_id);
         if (active) {
+          if (callRef.current?.call_id !== call.call_id) return;
+          if (
+            response.data.session_declined &&
+            callRef.current.direction === 'incoming'
+          ) {
+            updateCall(null);
+            return;
+          }
+          if (
+            response.data.accepted_on_another_device &&
+            callRef.current.direction === 'incoming'
+          ) {
+            dismissAnsweredCall({
+              call_id: call.call_id,
+              answered_by_name: response.data.accepted_by_name,
+            });
+            return;
+          }
           setError('');
           updateCall((current) => current
             ? { ...current, ...response.data, direction: current.direction }
@@ -172,7 +213,7 @@ export function VoiceCallProvider({ children }) {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [call?.call_id, call?.status, updateCall]);
+  }, [call?.call_id, call?.status, dismissAnsweredCall, updateCall]);
 
   const startCall = useCallback(async (staff) => {
     if (!staff?.username) {
@@ -214,6 +255,10 @@ export function VoiceCallProvider({ children }) {
     setError('');
     try {
       const response = await voiceCallApi.respondToClientCall(current.call_id, action);
+      if (action === 'decline') {
+        updateCall(null);
+        return;
+      }
       updateCall({ ...current, status: response.data.status });
     } catch (responseError) {
       setError(responseError?.message || 'Unable to respond to this call.');
@@ -571,9 +616,7 @@ export function VoiceCallOverlay() {
   const otherUsername = call.other_participant_username;
   const branchName = call.branch_name || call.branch_id;
   const callTime = formatCallTime(call.create_date);
-  const label = acceptedOnAnotherDevice
-    ? 'Call answered on another device'
-    : connected ? `Voice call connected · ${formatDuration(duration)}` : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
+  const label = connected ? `Voice call connected · ${formatDuration(duration)}` : connecting ? 'Connecting audio…' : STATUS_LABELS[status] || 'Voice call';
 
   return (
     <>
@@ -629,11 +672,6 @@ export function VoiceCallOverlay() {
         ) : null}
         {!isCallPage ? <h2 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">{otherName}</h2> : null}
         {!isCallPage ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{label}</p> : null}
-        {acceptedOnAnotherDevice ? (
-          <p className="mt-4 rounded-lg bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200" role="status">
-            This call was answered on another device.
-          </p>
-        ) : null}
         {(branchName || otherUsername || callTime) && !isCallPage ? (
           <div className="mx-auto mt-5 grid w-full max-w-xs gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-slate-700 dark:bg-slate-800/70">
             {branchName ? (
