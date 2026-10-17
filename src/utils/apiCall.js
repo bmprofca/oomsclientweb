@@ -90,10 +90,12 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
       const clonedResponse = response.clone();
       const data = await clonedResponse.json();
       
-      if (data && data.message) {
-        if (!response.ok || data.success === false) {
-          toast.error(data.message);
-        }
+      if (data && data.message != null && (!response.ok || data.success === false)) {
+        const msg =
+          typeof data.message === 'string'
+            ? data.message
+            : (data.message?.message || JSON.stringify(data.message));
+        if (msg) toast.error(String(msg));
       }
     } catch (e) {
       // Ignored
