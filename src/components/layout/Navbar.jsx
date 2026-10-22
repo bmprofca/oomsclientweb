@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Menu,
@@ -16,6 +16,7 @@ import {
 
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiCall } from '../../utils/apiCall';
 
 const Navbar = ({
   toggleSidebar,
@@ -27,6 +28,26 @@ const Navbar = ({
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { userData, logout, openProfileModal } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const loadUnreadCount = async () => {
+      if (!userData?.token) return;
+      try {
+        const response = await apiCall('/notifications/unread-count', 'GET');
+        const payload = await response.json().catch(() => null);
+        if (active && response.ok && payload?.success !== false) {
+          setUnreadCount(Number(payload?.data?.unread_count || 0));
+        }
+      } catch {
+        // The notification page renders the retry state when the service is unavailable.
+      }
+    };
+    loadUnreadCount();
+    const timer = window.setInterval(loadUnreadCount, 60000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [userData?.token]);
 
   const handleLogout = async () => {
     logout();
@@ -81,6 +102,11 @@ const Navbar = ({
                 title="Notifications"
               >
                 <Bell className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-slate-600 dark:text-slate-200 transition-colors duration-200" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-[10px] font-bold leading-4 text-white" aria-label={`${unreadCount} unread notifications`}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
                 <span className="sr-only">Notifications</span>
               </button>
 
